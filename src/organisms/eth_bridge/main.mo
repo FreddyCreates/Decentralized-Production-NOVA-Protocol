@@ -355,7 +355,7 @@ persistent actor EthBridge {
       ckMinted    = true;
       timestamp   = d.timestamp;
     });
-    auditLog.add("EthDeposit #" # Nat.toText(depositId) # " → ck" # deposits.get(depositId).tokenSymbol # " minted");
+    auditLog.add("EthDeposit #" # Nat.toText(depositId) # " → ck" # d.tokenSymbol # " minted");
     true
   };
 

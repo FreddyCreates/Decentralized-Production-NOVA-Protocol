@@ -322,7 +322,8 @@ persistent actor BtcBridge {
     let id = nextWithdrawalId;
     nextWithdrawalId += 1;
 
-    // Estimated fee: ~5 sat/vByte × ~140 vBytes for a typical P2WPKH tx
+    // Estimated fee: ~5 sat/vByte × ~140 vBytes for a typical P2WPKH tx.
+    // NOTE: This is a static placeholder; production must use a dynamic fee oracle.
     let feeSats : Nat = 700;
 
     withdrawals.add({

@@ -562,9 +562,6 @@ persistent actor ChainVault {
 
     // ── Seed the canonical asset registry ──────────────────────────
 
-    // ICP native assets
-    ignore nextAssetId; // used below
-
     // ICP
     let _a0 = nextAssetId;
     nextAssetId += 1;

@@ -245,8 +245,7 @@ persistent actor AssetProfile {
     description     : Text,
     externalUri     : ?Text
   ) : async Result.Result<Nat, Text> {
-    // Validate TRL range
-    if (trl < 1 or trl > 9) {
+    if (not isValidTRL(trl)) {
       return #err("TRL must be between 1 and 9");
     };
 
@@ -276,11 +275,15 @@ persistent actor AssetProfile {
     // φ-Maturity Index: TRL × PHI_INV, capped at 1.0
     let phiMaturity = Float.min(1.0, Float.fromInt(trl) / 9.0 * PHI);
 
-    // Security score: starts at PHI_INV, adjusts with risk
+    // Security score: φ-scaled by risk tier.
+    // Low  = PHI_INV^0  = 1.0 (full trust)
+    // Med  = PHI_INV^1  ≈ 0.618
+    // High = PHI_INV^2  ≈ 0.382
+    // Restricted = 0.0
     let secScore = switch (riskLevel) {
-      case (#Low)        PHI_INV + PHI_INV / PHI;     // ~0.999... 
+      case (#Low)        1.0;
       case (#Medium)     PHI_INV;
-      case (#High)       PHI_INV / PHI;
+      case (#High)       PHI_INV * PHI_INV;
       case (#Restricted) 0.0;
     };
     let secScoreClamped = Float.min(1.0, Float.max(0.0, secScore));
@@ -330,7 +333,7 @@ persistent actor AssetProfile {
 
   /// Update the Technology Readiness Level of an asset.
   public shared(msg) func updateTRL(profileId : Nat, newTrl : TechReadinessLevel) : async Result.Result<(), Text> {
-    if (newTrl < 1 or newTrl > 9) { return #err("TRL must be 1–9") };
+    if (not isValidTRL(newTrl)) { return #err("TRL must be 1–9") };
     if (profileId >= profiles.size()) { return #err("Profile not found") };
 
     switch (getCPL()) {
@@ -740,6 +743,11 @@ persistent actor AssetProfile {
       case (#Restricted, #Restricted) true;
       case (_,           _)           false;
     }
+  };
+
+  /// Validate that a TRL value is within the 1–9 range.
+  func isValidTRL(trl : TechReadinessLevel) : Bool {
+    trl >= 1 and trl <= 9
   };
 
   // ══════════════════════════════════════════════════════════════════
