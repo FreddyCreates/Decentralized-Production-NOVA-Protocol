@@ -1,0 +1,121 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Release.Name }}-sovereign
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: sovereign-node
+    sovereignty.nova/jurisdiction: {{ .Values.global.jurisdiction }}
+spec:
+  replicas: {{ .Values.sovereign.replicaCount }}
+  serviceName: {{ .Release.Name }}-sovereign
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nova-sovereign
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: nova-sovereign
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: sovereign-node
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    spec:
+      serviceAccountName: {{ .Release.Name }}-sovereign
+      securityContext:
+        {{- toYaml .Values.sovereign.securityContext | nindent 8 }}
+      {{- with .Values.sovereign.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.sovereign.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.sovereign.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: sovereign
+          image: "{{ .Values.sovereign.image.repository }}:{{ .Values.sovereign.image.tag }}"
+          imagePullPolicy: {{ .Values.sovereign.image.pullPolicy }}
+          args:
+            - "--mode"
+            - "sovereign"
+            - "--network"
+            - "local"
+            - "--enable-tls"
+            - "{{ .Values.tls.enabled }}"
+            - "--enable-metrics"
+            - "{{ .Values.monitoring.enabled }}"
+          ports:
+            - name: replica
+              containerPort: 8080
+              protocol: TCP
+            - name: dashboard
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+            - name: sovereign-api
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /api/v2/status
+              port: replica
+            initialDelaySeconds: 120
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /api/v2/status
+              port: replica
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.sovereign.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /opt/nova/data
+            - name: config
+              mountPath: /opt/nova/config
+            - name: keys
+              mountPath: /opt/nova/keys
+              readOnly: true
+          env:
+            - name: NOVA_DEPLOY_MODE
+              value: "sovereign"
+            - name: NOVA_DATA_JURISDICTION
+              value: {{ .Values.global.jurisdiction | quote }}
+            - name: NOVA_CLASSIFICATION
+              value: {{ .Values.global.classificationLevel | quote }}
+      volumes:
+        - name: keys
+          secret:
+            secretName: {{ .Values.tls.manual.secretName }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.sovereign.persistence.storageClass }}
+        storageClassName: {{ .Values.sovereign.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sovereign.persistence.dataSize }}
+    - metadata:
+        name: config
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.sovereign.persistence.storageClass }}
+        storageClassName: {{ .Values.sovereign.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.sovereign.persistence.configSize }}

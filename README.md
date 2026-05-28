@@ -119,5 +119,34 @@ Configuration: [`nova.json`](nova.json)
 
 ---
 
+## Sovereign Cloud Deployment
+
+**Deploy NOVA as a fully sovereign cloud application for governments, states, and enterprises.**
+
+The entire protocol stack — 60+ canisters, cognitive engines, SDK, and admin
+dashboard — is packaged for self-contained deployment on any infrastructure with
+zero external dependencies.
+
+| Deployment Method | Use Case | Guide |
+|-------------------|----------|-------|
+| **Docker Compose** | Quick start, development, small deployments | `deploy/docker/` |
+| **Kubernetes (Helm)** | Production, HA, enterprise scale | `deploy/kubernetes/` |
+| **Terraform** | Infrastructure provisioning, IaC | `deploy/terraform/` |
+
+### Supported Environments
+- AWS GovCloud / Azure Government / GCP Assured Workloads / OCI Government
+- Private on-premises Kubernetes clusters
+- Air-gapped (fully disconnected) environments
+
+### Quick Start
+```bash
+cp deploy/docker/sovereign.env.template .env
+docker compose -f deploy/docker/docker-compose.yml up -d
+```
+
+📖 **Full guide**: [`SOVEREIGN_CLOUD_DEPLOYMENT.md`](SOVEREIGN_CLOUD_DEPLOYMENT.md)
+
+---
+
 *Build №30 — The youngest organism in the Casa de Medina civilization.*
 *"We don't talk unless we need to listen to because our voice is power."*

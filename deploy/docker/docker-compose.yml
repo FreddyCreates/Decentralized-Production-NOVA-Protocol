@@ -1,0 +1,161 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOVA Protocol — Sovereign Cloud Docker Compose
+# Full-stack deployment for governments, states, and enterprises
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Usage:
+#   cp deploy/docker/sovereign.env.template .env
+#   docker compose -f deploy/docker/docker-compose.yml up -d
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── NOVA Sovereign Node (Core) ──────────────────────────────────────────────
+  nova-sovereign:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile
+    container_name: nova-sovereign
+    restart: unless-stopped
+    env_file:
+      - sovereign.env.template
+    environment:
+      - NOVA_DEPLOY_MODE=${NOVA_DEPLOY_MODE:-sovereign}
+      - NOVA_NETWORK=${NOVA_NETWORK:-local}
+      - NOVA_ENABLE_TLS=${NOVA_ENABLE_TLS:-true}
+      - NOVA_ENABLE_METRICS=${NOVA_ENABLE_METRICS:-true}
+    ports:
+      - "${NOVA_REPLICA_PORT:-8080}:8080"
+      - "${NOVA_DASHBOARD_PORT:-3000}:3000"
+      - "${NOVA_METRICS_PORT:-9090}:9090"
+      - "${NOVA_API_PORT:-8443}:8443"
+    volumes:
+      - nova-data:/opt/nova/data
+      - nova-config:/opt/nova/config
+      - nova-keys:/opt/nova/keys
+    networks:
+      - nova-sovereign-net
+    deploy:
+      resources:
+        limits:
+          cpus: "${NOVA_MAX_CPU_CORES:-8}"
+          memory: "${NOVA_MAX_MEMORY_GB:-32}G"
+        reservations:
+          cpus: "2"
+          memory: "4G"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v2/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  # ── Sovereign Gateway (mTLS Termination & Access Control) ───────────────────
+  nova-gateway:
+    image: nginx:1.27-alpine
+    container_name: nova-gateway
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/gateway.conf:/etc/nginx/nginx.conf:ro
+      - nova-keys:/etc/nova/keys:ro
+    networks:
+      - nova-sovereign-net
+    depends_on:
+      nova-sovereign:
+        condition: service_healthy
+
+  # ── Sovereign Database (Encrypted State Backup) ─────────────────────────────
+  nova-statedb:
+    image: postgres:16-alpine
+    container_name: nova-statedb
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nova_sovereign
+      POSTGRES_USER: nova
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - nova-pgdata:/var/lib/postgresql/data
+    networks:
+      - nova-sovereign-net
+    secrets:
+      - db_password
+    deploy:
+      resources:
+        limits:
+          memory: "4G"
+
+  # ── Monitoring Stack ────────────────────────────────────────────────────────
+  nova-prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: nova-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - nova-prometheus-data:/prometheus
+    networks:
+      - nova-sovereign-net
+    ports:
+      - "9091:9090"
+
+  nova-grafana:
+    image: grafana/grafana:11.0.0
+    container_name: nova-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/grafana_password
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    volumes:
+      - nova-grafana-data:/var/lib/grafana
+    networks:
+      - nova-sovereign-net
+    ports:
+      - "3001:3000"
+    secrets:
+      - grafana_password
+
+  # ── Audit Log Collector ─────────────────────────────────────────────────────
+  nova-audit:
+    image: fluent/fluent-bit:3.0
+    container_name: nova-audit
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - nova-data:/opt/nova/data:ro
+      - nova-audit-logs:/audit
+    networks:
+      - nova-sovereign-net
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  nova-data:
+    driver: local
+  nova-config:
+    driver: local
+  nova-keys:
+    driver: local
+  nova-pgdata:
+    driver: local
+  nova-prometheus-data:
+    driver: local
+  nova-grafana-data:
+    driver: local
+  nova-audit-logs:
+    driver: local
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  nova-sovereign-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  grafana_password:
+    file: ./secrets/grafana_password.txt

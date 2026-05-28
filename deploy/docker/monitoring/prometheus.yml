@@ -1,0 +1,14 @@
+# Prometheus configuration for NOVA Sovereign Cloud
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: 'nova-sovereign'
+    static_configs:
+      - targets: ['nova-sovereign:9090']
+    metrics_path: /metrics
+
+  - job_name: 'nova-statedb'
+    static_configs:
+      - targets: ['nova-statedb:9187']

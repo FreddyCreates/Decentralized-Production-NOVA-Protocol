@@ -1,0 +1,154 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOVA Protocol — Sovereign Cloud Helm Values
+# Customize for your government, state, or enterprise deployment
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ── Global Configuration ──────────────────────────────────────────────────────
+global:
+  # Deployment jurisdiction (ISO 3166-1 alpha-2 country code)
+  jurisdiction: "XX"
+  # Sovereign cloud provider: "airgapped", "aws-govcloud", "azure-gov", "gcp-assured", "oci-gov", "private"
+  cloudProvider: "private"
+  # Classification level: "unclassified", "cui", "secret", "top-secret"
+  classificationLevel: "unclassified"
+
+# ── NOVA Sovereign Node ───────────────────────────────────────────────────────
+sovereign:
+  replicaCount: 3
+  image:
+    repository: nova-sovereign
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "8"
+      memory: "32Gi"
+  persistence:
+    enabled: true
+    storageClass: ""
+    dataSize: 100Gi
+    configSize: 1Gi
+    keysSize: 100Mi
+
+  # Network policies for sovereign isolation
+  networkPolicy:
+    enabled: true
+    # Allow only internal cluster traffic by default
+    allowExternal: false
+    # Specific CIDR ranges allowed (e.g., government VPN ranges)
+    allowedCIDRs: []
+
+  # Pod security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Node affinity for data sovereignty (pin to specific nodes/zones)
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ── TLS / mTLS Configuration ─────────────────────────────────────────────────
+tls:
+  enabled: true
+  # Use cert-manager for automatic certificate management
+  certManager:
+    enabled: false
+    issuer: "sovereign-ca-issuer"
+  # Manual certificate paths (for air-gapped environments)
+  manual:
+    enabled: true
+    secretName: "nova-tls-certs"
+  # Mutual TLS for zero-trust access
+  mtls:
+    enabled: true
+    clientCASecretName: "nova-client-ca"
+
+# ── Gateway / Ingress ─────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
+    nginx.ingress.kubernetes.io/auth-tls-secret: "default/nova-client-ca"
+  hosts:
+    - host: nova.sovereign.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nova-tls-certs
+      hosts:
+        - nova.sovereign.local
+
+# ── Governance & Access Control ───────────────────────────────────────────────
+governance:
+  # Multi-signature requirement for critical operations
+  multisig:
+    enabled: true
+    threshold: 3
+    totalSigners: 5
+  # Role-based access control
+  rbac:
+    enabled: true
+    roles:
+      - name: sovereign-admin
+        permissions: ["*"]
+      - name: operator
+        permissions: ["deploy", "monitor", "audit"]
+      - name: auditor
+        permissions: ["read", "audit"]
+      - name: viewer
+        permissions: ["read"]
+
+# ── Monitoring & Compliance ───────────────────────────────────────────────────
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+    retention: "90d"
+    storageSize: 50Gi
+  grafana:
+    enabled: true
+    adminPasswordSecret: "nova-grafana-admin"
+  # Audit logging for compliance (FedRAMP, ISO 27001, SOC2)
+  audit:
+    enabled: true
+    retentionDays: 365
+    # Forward to external SIEM
+    siem:
+      enabled: false
+      endpoint: ""
+      protocol: "syslog"
+
+# ── Backup & Disaster Recovery ────────────────────────────────────────────────
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retentionDays: 90
+  encryption:
+    enabled: true
+    keySecretName: "nova-backup-key"
+  # S3-compatible storage (works with MinIO for air-gapped)
+  storage:
+    type: "s3"
+    bucket: "nova-sovereign-backups"
+    endpoint: ""
+    region: ""
+
+# ── Air-Gapped Configuration ─────────────────────────────────────────────────
+airgapped:
+  enabled: false
+  # Local container registry for air-gapped environments
+  registry:
+    url: "registry.sovereign.local:5000"
+  # Local package mirror
+  packageMirror:
+    url: "packages.sovereign.local"
