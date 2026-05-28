@@ -1,0 +1,21 @@
+{
+  "name": "@nova-cloud/platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NOVA Cloud Platform — Sovereign Edge PaaS. Your fly.io.",
+  "type": "module",
+  "workspaces": [
+    "api",
+    "cli",
+    "scheduler",
+    "shared"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev:api": "npm run dev -w api",
+    "dev:scheduler": "npm run dev -w scheduler",
+    "start": "npm run start -w api & npm run start -w scheduler"
+  },
+  "author": "Casa de Medina",
+  "license": "SEE LICENSE IN ../LICENSE.md"
+}

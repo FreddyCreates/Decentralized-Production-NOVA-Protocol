@@ -1,0 +1,21 @@
+{
+  "name": "@nova-cloud/scheduler",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "node --loader ts-node/esm index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "dockerode": "^4.0.2",
+    "pino": "^9.4.0",
+    "nanoid": "^5.0.7"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.31",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}

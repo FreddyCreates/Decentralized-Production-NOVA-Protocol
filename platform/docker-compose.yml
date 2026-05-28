@@ -1,0 +1,127 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOVA Cloud Platform — Control Plane Docker Compose
+#
+# This runs YOUR platform. The thing that other people deploy TO.
+#
+# Usage:
+#   cd platform
+#   docker compose up -d
+#
+# Then use the CLI:
+#   nova-cloud auth signup
+#   nova-cloud apps create my-app
+#   nova-cloud deploy --image nginx:latest
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+  # ── Platform API (Control Plane) ─────────────────────────────────────────────
+  nova-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api
+    container_name: nova-cloud-api
+    restart: unless-stopped
+    ports:
+      - "${NOVA_API_PORT:-4000}:4000"
+    environment:
+      - NOVA_API_PORT=4000
+      - NOVA_JWT_SECRET=${NOVA_JWT_SECRET:-nova-sovereign-production-secret-change-me}
+      - NOVA_DB_PATH=/data/nova-cloud.db
+      - NOVA_REGISTRY_URL=${NOVA_REGISTRY_URL:-registry.novacloud.run}
+    volumes:
+      - platform-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - nova-platform
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── Scheduler (Placement Engine) ─────────────────────────────────────────────
+  nova-scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: scheduler
+    container_name: nova-cloud-scheduler
+    restart: unless-stopped
+    environment:
+      - NOVA_DB_PATH=/data/nova-cloud.db
+    volumes:
+      - platform-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - nova-platform
+    depends_on:
+      nova-api:
+        condition: service_healthy
+
+  # ── Platform Proxy (Routes traffic to apps) ──────────────────────────────────
+  nova-proxy:
+    image: traefik:v3.1
+    container_name: nova-cloud-proxy
+    restart: unless-stopped
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=nova-platform"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8090:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - nova-platform
+    labels:
+      - "traefik.enable=true"
+
+  # ── Container Registry (stores app images) ──────────────────────────────────
+  nova-registry:
+    image: registry:2
+    container_name: nova-cloud-registry
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry-data:/var/lib/registry
+    networks:
+      - nova-platform
+    environment:
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+
+  # ── Platform Database (Postgres for production) ──────────────────────────────
+  nova-db:
+    image: postgres:16-alpine
+    container_name: nova-cloud-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nova_platform
+      POSTGRES_USER: nova
+      POSTGRES_PASSWORD: ${NOVA_DB_PASSWORD:-nova-dev-password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - nova-platform
+    ports:
+      - "5432:5432"
+
+volumes:
+  platform-data:
+    driver: local
+  registry-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+networks:
+  nova-platform:
+    driver: bridge
+    name: nova-platform
