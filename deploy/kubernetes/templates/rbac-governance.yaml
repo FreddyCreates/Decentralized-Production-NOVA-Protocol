@@ -1,0 +1,199 @@
+{{- if .Values.governance.rbac.enabled }}
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOVA Sovereign Cloud — RBAC Configuration
+# Role-based access control for sovereign governance
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Sovereign Admin Role — Full system access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-sovereign-admin
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/role: admin
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+# Operator Role — Deploy, monitor, manage canisters
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-sovereign-operator
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/role: operator
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "replicasets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "endpoints"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods/log", "pods/exec"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create"]
+  - apiGroups: ["monitoring.coreos.com"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+# Auditor Role — Read-only + audit access
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-sovereign-auditor
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/role: auditor
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: []  # Auditors cannot view secrets content
+---
+# Viewer Role — Dashboard read-only
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-sovereign-viewer
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/role: viewer
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+{{- end }}
+---
+# Service Account for sovereign nodes
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-sovereign
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    nova.sovereign/jurisdiction: {{ .Values.global.jurisdiction | quote }}
+---
+# Bind service account to operator role within namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Release.Name }}-node-binding
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-sovereign-operator
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-sovereign
+    namespace: {{ .Release.Namespace }}
+---
+{{- if .Values.governance.multisig.enabled }}
+# Governance ConfigMap for multi-sig configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-governance
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: governance
+data:
+  governance.yaml: |
+    multisig:
+      enabled: {{ .Values.governance.multisig.enabled }}
+      threshold: {{ .Values.governance.multisig.threshold }}
+      totalSigners: {{ .Values.governance.multisig.totalSigners }}
+      timeoutHours: 72
+      criticalOperations:
+        - canister_upgrade
+        - emergency_shutdown
+        - key_rotation
+        - data_export
+        - configuration_change
+        - signer_addition
+        - signer_removal
+    rbac:
+      enabled: {{ .Values.governance.rbac.enabled }}
+      {{- range .Values.governance.rbac.roles }}
+      roles:
+        - name: {{ .name }}
+          permissions: {{ .permissions | toJson }}
+      {{- end }}
+    compliance:
+      auditLogEnabled: true
+      retentionDays: {{ .Values.monitoring.audit.retentionDays }}
+      tamperProof: true
+      frameworks:
+        - nist-800-53
+        - iso-27001
+        - fedramp
+    dataSovereignty:
+      jurisdiction: {{ .Values.global.jurisdiction | quote }}
+      classification: {{ .Values.global.classificationLevel | quote }}
+      strictResidency: true
+      encryptionAtRest: true
+      encryptionInTransit: true
+{{- end }}
+---
+# Pod Security configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-security-policy
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: security
+data:
+  security-policy.yaml: |
+    podSecurity:
+      enforce: restricted
+      runAsNonRoot: true
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      dropCapabilities: ["ALL"]
+      addCapabilities: ["NET_BIND_SERVICE"]
+      seccompProfile: RuntimeDefault
+    networkSecurity:
+      defaultDeny: true
+      encryptInterNode: true
+      mtlsRequired: {{ .Values.tls.mtls.enabled }}
+    certificatePolicy:
+      algorithm: RSA
+      keySize: 4096
+      validityDays: 365
+      rotationDaysBeforeExpiry: 30
+      autoRotation: true
+    auditPolicy:
+      logAllAccess: true
+      logMutations: true
+      logAuthentication: true
+      logAuthorization: true
+      retentionDays: {{ .Values.monitoring.audit.retentionDays | default 365 }}

@@ -1,0 +1,291 @@
+{{- if .Values.autoscaling.enabled }}
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOVA Sovereign Cloud — Horizontal Pod Autoscaler
+# Automatic scaling with sovereign resource guarantees
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-sovereign
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: autoscaler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: {{ .Release.Name }}-sovereign
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPU }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemory }}
+    {{- if .Values.autoscaling.customMetrics }}
+    {{- range .Values.autoscaling.customMetrics }}
+    - type: Pods
+      pods:
+        metric:
+          name: {{ .name }}
+        target:
+          type: AverageValue
+          averageValue: {{ .target }}
+    {{- end }}
+    {{- end }}
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+      selectPolicy: Min
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+      selectPolicy: Min
+{{- end }}
+---
+# Pod Disruption Budget — ensures sovereign availability guarantees
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Release.Name }}-sovereign
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: availability
+spec:
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- else }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable | default 1 }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nova-sovereign
+      app.kubernetes.io/instance: {{ .Release.Name }}
+---
+# Priority Class for sovereign workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ .Release.Name }}-sovereign-critical
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+value: 1000000
+globalDefault: false
+description: "Critical priority for sovereign NOVA Protocol nodes"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ .Release.Name }}-sovereign-high
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+value: 750000
+globalDefault: false
+description: "High priority for sovereign gateway and monitoring"
+---
+# Resource Quota for namespace isolation
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ .Release.Name }}-sovereign-quota
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: resource-management
+spec:
+  hard:
+    requests.cpu: {{ .Values.resourceQuota.requestsCPU | default "32" }}
+    requests.memory: {{ .Values.resourceQuota.requestsMemory | default "64Gi" }}
+    limits.cpu: {{ .Values.resourceQuota.limitsCPU | default "64" }}
+    limits.memory: {{ .Values.resourceQuota.limitsMemory | default "128Gi" }}
+    pods: {{ .Values.resourceQuota.maxPods | default "50" }}
+    persistentvolumeclaims: {{ .Values.resourceQuota.maxPVCs | default "20" }}
+    services: {{ .Values.resourceQuota.maxServices | default "20" }}
+    secrets: {{ .Values.resourceQuota.maxSecrets | default "50" }}
+    configmaps: {{ .Values.resourceQuota.maxConfigMaps | default "50" }}
+---
+# Limit Range for default pod constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ .Release.Name }}-sovereign-limits
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: resource-management
+spec:
+  limits:
+    - type: Pod
+      max:
+        cpu: "16"
+        memory: 32Gi
+      min:
+        cpu: 50m
+        memory: 64Mi
+    - type: Container
+      default:
+        cpu: 500m
+        memory: 512Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      max:
+        cpu: "8"
+        memory: 16Gi
+      min:
+        cpu: 25m
+        memory: 32Mi
+    - type: PersistentVolumeClaim
+      max:
+        storage: 2Ti
+      min:
+        storage: 1Gi
+---
+{{- if .Values.networkPolicy.enabled }}
+# Sovereign network policy — default deny all
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-default-deny
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: network-security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Allow internal communication within sovereign cluster
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-internal
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# Gateway network policy — external access point
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nova-sovereign
+      app.kubernetes.io/component: gateway
+  policyTypes:
+    - Ingress
+  ingress:
+    - from: []  # Allow from anywhere (gateway is public-facing)
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8443
+---
+# Monitoring network policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Release.Name }}-monitoring
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: nova-sovereign
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    nova.sovereign/component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      nova.sovereign/component: monitoring
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      ports:
+        - protocol: TCP
+          port: 9090
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: {{ .Release.Name }}
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+{{- end }}

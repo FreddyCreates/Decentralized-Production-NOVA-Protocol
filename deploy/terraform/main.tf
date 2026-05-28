@@ -301,3 +301,68 @@ output "deployment_info" {
   }
   description = "Summary of sovereign deployment configuration"
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Module References — Deep Infrastructure Modules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+module "networking" {
+  source = "./modules/networking"
+
+  deployment_name      = var.deployment_name
+  namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  enable_airgapped     = var.enable_airgapped
+  enable_mtls          = var.enable_mtls
+  classification_level = var.classification_level
+}
+
+module "security" {
+  source = "./modules/security"
+
+  deployment_name      = var.deployment_name
+  namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  jurisdiction         = var.jurisdiction
+  classification_level = var.classification_level
+  ca_private_key_pem   = tls_private_key.ca.private_key_pem
+  ca_cert_pem          = tls_self_signed_cert.ca.cert_pem
+}
+
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  deployment_name  = var.deployment_name
+  namespace        = kubernetes_namespace.sovereign.metadata[0].name
+  replica_count    = var.replica_count
+  jurisdiction     = var.jurisdiction
+  cloud_provider   = var.cloud_provider
+}
+
+module "compute" {
+  source = "./modules/compute"
+
+  deployment_name      = var.deployment_name
+  namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  replica_count        = var.replica_count
+  classification_level = var.classification_level
+  enable_airgapped     = var.enable_airgapped
+  enable_mtls          = var.enable_mtls
+}
+
+module "storage" {
+  source = "./modules/storage"
+
+  deployment_name      = var.deployment_name
+  namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  jurisdiction         = var.jurisdiction
+  classification_level = var.classification_level
+}
+
+module "governance" {
+  source = "./modules/governance"
+
+  deployment_name      = var.deployment_name
+  namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  jurisdiction         = var.jurisdiction
+  classification_level = var.classification_level
+  replica_count        = var.replica_count
+}
