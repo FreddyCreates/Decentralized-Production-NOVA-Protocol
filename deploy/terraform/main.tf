@@ -311,8 +311,8 @@ module "networking" {
 
   deployment_name      = var.deployment_name
   namespace            = kubernetes_namespace.sovereign.metadata[0].name
+  jurisdiction         = var.jurisdiction
   enable_airgapped     = var.enable_airgapped
-  enable_mtls          = var.enable_mtls
   classification_level = var.classification_level
 }
 
@@ -323,8 +323,6 @@ module "security" {
   namespace            = kubernetes_namespace.sovereign.metadata[0].name
   jurisdiction         = var.jurisdiction
   classification_level = var.classification_level
-  ca_private_key_pem   = tls_private_key.ca.private_key_pem
-  ca_cert_pem          = tls_self_signed_cert.ca.cert_pem
 }
 
 module "monitoring" {
@@ -332,9 +330,6 @@ module "monitoring" {
 
   deployment_name  = var.deployment_name
   namespace        = kubernetes_namespace.sovereign.metadata[0].name
-  replica_count    = var.replica_count
-  jurisdiction     = var.jurisdiction
-  cloud_provider   = var.cloud_provider
 }
 
 module "compute" {
@@ -344,8 +339,7 @@ module "compute" {
   namespace            = kubernetes_namespace.sovereign.metadata[0].name
   replica_count        = var.replica_count
   classification_level = var.classification_level
-  enable_airgapped     = var.enable_airgapped
-  enable_mtls          = var.enable_mtls
+  jurisdiction         = var.jurisdiction
 }
 
 module "storage" {
@@ -354,7 +348,6 @@ module "storage" {
   deployment_name      = var.deployment_name
   namespace            = kubernetes_namespace.sovereign.metadata[0].name
   jurisdiction         = var.jurisdiction
-  classification_level = var.classification_level
 }
 
 module "governance" {
@@ -364,5 +357,4 @@ module "governance" {
   namespace            = kubernetes_namespace.sovereign.metadata[0].name
   jurisdiction         = var.jurisdiction
   classification_level = var.classification_level
-  replica_count        = var.replica_count
 }
