@@ -126,12 +126,22 @@ export default function ICPCoverage() {
 
   // In production, fetch from icp_coverage canister
   useEffect(() => {
-    // TODO: Replace with actual canister calls
-    // const actor = await createActor(canisterId)
-    // const snap = await actor.getCoverageSnapshot()
-    // setSnapshot(snap)
-    // const pos = await actor.getPositions()
-    // setPositions(pos)
+    async function fetchCoverage() {
+      setLoading(true)
+      try {
+        // TODO: Replace with actual canister calls when deployed
+        // const actor = await createActor(canisterId)
+        // const snap = await actor.getCoverageSnapshot()
+        // setSnapshot(snap)
+        // const pos = await actor.getPositions()
+        // setPositions(pos)
+        setSnapshot(mockSnapshot)
+        setPositions(mockPositions)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCoverage()
   }, [])
 
   return (
@@ -140,6 +150,8 @@ export default function ICPCoverage() {
       <div className="page-hero">
         <h1>ICP Coverage — <span>Protocol-wide ICP Position Tracker</span></h1>
       </div>
+
+      {loading && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Loading coverage data…</div>}
 
       {/* Summary Cards */}
       <div style={{
