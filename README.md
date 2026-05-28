@@ -110,6 +110,32 @@ This project uses its own build CLI — no DFX required for local development.
 
 Configuration: [`nova.json`](nova.json)
 
+## Launch the Platform
+
+The NOVA platform UI is a React application. To access it locally:
+
+```bash
+# Option 1: Run the dev server (hot-reload, best for development)
+npm run dev:frontend
+
+# Option 2: Serve the production build locally
+npm run build:frontend   # builds into public/
+npm run dev:local        # serves on http://localhost:3000
+```
+
+Once running, open **http://localhost:3000** in your browser to access the full
+NOVA platform — Engine, Agents, Token Economy, EffectTrace, and more.
+
+### Deploy to the web
+
+```bash
+npm run deploy           # Deploy to your configured target
+npm run deploy:all       # Deploy everywhere (ICP + Cloudflare + Sovereign)
+npm run deploy:status    # Check live URLs
+```
+
+See [`DEPLOY.md`](DEPLOY.md) for full deployment details.
+
 ## Licenses
 
 - [`LICENSE.md`](LICENSE.md) — **Sovereign Organism License v1.0** — governs

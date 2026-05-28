@@ -44,6 +44,8 @@
     "deploy:sovereign": "node scripts/nova-deploy.mjs sovereign",
     "deploy:all": "node scripts/nova-deploy.mjs all",
     "deploy:status": "node scripts/nova-deploy.mjs status",
+    "build:frontend": "cd src/frontend && npm install && npm run build",
+    "dev:frontend": "cd src/frontend && npm run dev",
     "dev:local": "npx wrangler pages dev public --port=3000"
   },
   "keywords": [

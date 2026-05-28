@@ -3,12 +3,15 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  publicDir: false,
   define: {
     'process.env.DFX_NETWORK': JSON.stringify(
       mode === 'production' ? 'ic' : 'local'
     ),
   },
   build: {
+    outDir: '../../public',
+    emptyOutDir: false,
     target: 'es2020',
     sourcemap: mode !== 'production',
     rollupOptions: {
