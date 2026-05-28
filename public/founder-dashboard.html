@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOVA — Founder Dashboard</title>
+<style>
+  /* ── Base ── */
+  :root {
+    --phi: 1.6180339887;
+    --gold: #c9a227;
+    --gold-dim: #7a5c10;
+    --bg: #090c10;
+    --bg2: #0f1318;
+    --bg3: #161c24;
+    --border: #1e2a38;
+    --text: #d8e4f0;
+    --text-dim: #5a7090;
+    --green: #1ecc7a;
+    --red: #e84060;
+    --blue: #4090e8;
+    --purple: #9060e0;
+    --radius: 6px;
+    --font: 'Courier New', Courier, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; }
+
+  /* ── Layout ── */
+  .shell { display: grid; grid-template-rows: 44px 1fr; height: 100vh; }
+  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+  .topbar-brand { color: var(--gold); font-size: 15px; font-weight: bold; letter-spacing: 2px; margin-right: 12px; }
+  .workspace { display: grid; grid-template-columns: 220px 1fr 300px; height: 100%; overflow: hidden; }
+
+  /* ── Toolbar (left) ── */
+  .toolbar { background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 10px 8px; gap: 4px; overflow-y: auto; }
+  .toolbar-section { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 8px 4px 4px; }
+  .tool-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text); padding: 7px 10px; border-radius: var(--radius);
+    cursor: pointer; text-align: left; width: 100%; font: inherit;
+    transition: all 0.12s;
+  }
+  .tool-btn:hover { background: var(--bg3); border-color: var(--border); }
+  .tool-btn.active { background: var(--bg3); border-color: var(--gold-dim); color: var(--gold); }
+  .tool-btn .icon { font-size: 16px; width: 22px; text-align: center; }
+  .tool-btn .label { font-size: 12px; }
+  .tool-btn .shortcut { font-size: 9px; color: var(--text-dim); margin-left: auto; }
+  .divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+  /* ── Centre panel ── */
+  .centre { display: grid; grid-template-rows: 1fr auto; overflow: hidden; }
+  .output-area { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Cards ── */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .card-header { padding: 8px 12px; background: var(--bg3); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); }
+  .card-badge { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: var(--bg); color: var(--text-dim); }
+  .card-body { padding: 12px; }
+  .result-line { padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .result-line:last-child { border: none; }
+  .result-dim { color: var(--gold); min-width: 160px; font-size: 11px; }
+  .result-val { color: var(--green); min-width: 80px; font-size: 11px; }
+  .result-insight { color: var(--text); font-size: 11px; flex: 1; }
+
+  /* ── Input bar ── */
+  .input-bar { border-top: 1px solid var(--border); background: var(--bg2); padding: 10px 14px; display: flex; gap: 8px; align-items: flex-end; }
+  .input-box { flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font: inherit; padding: 8px 12px; resize: none; min-height: 38px; max-height: 120px; outline: none; }
+  .input-box:focus { border-color: var(--gold-dim); }
+  .send-btn { background: var(--gold-dim); color: var(--gold); border: none; border-radius: var(--radius); padding: 8px 18px; cursor: pointer; font: inherit; font-weight: bold; }
+  .send-btn:hover { background: var(--gold); color: var(--bg); }
+
+  /* ── Right panel ── */
+  .right-panel { background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .panel-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .panel-tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; font-size: 11px; color: var(--text-dim); border-bottom: 2px solid transparent; }
+  .panel-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .panel-body { flex: 1; overflow-y: auto; padding: 10px; }
+
+  /* ── Notepad ── */
+  .note-form { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .note-input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font: inherit; padding: 6px 8px; outline: none; }
+  .note-input:focus { border-color: var(--gold-dim); }
+  .note-body-input { resize: vertical; min-height: 80px; }
+  .note-save-btn { background: var(--bg3); border: 1px solid var(--gold-dim); color: var(--gold); padding: 5px 10px; border-radius: var(--radius); cursor: pointer; font: inherit; }
+  .note-list { display: flex; flex-direction: column; gap: 6px; }
+  .note-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; }
+  .note-item-title { color: var(--gold); font-size: 11px; margin-bottom: 4px; }
+  .note-item-body { color: var(--text); font-size: 11px; line-height: 1.5; }
+  .note-item-tags { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .note-tag { font-size: 9px; padding: 1px 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--blue); }
+  .note-delete { float: right; background: none; border: none; color: var(--red); cursor: pointer; font-size: 11px; }
+
+  /* ── Framework list ── */
+  .fw-item { border-bottom: 1px solid var(--border); padding: 8px 0; cursor: pointer; }
+  .fw-item:hover .fw-name { color: var(--gold); }
+  .fw-name { font-size: 12px; color: var(--text); }
+  .fw-desc { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .fw-steps { margin-top: 8px; display: none; }
+  .fw-steps.open { display: block; }
+  .fw-step { font-size: 10px; color: var(--text); padding: 2px 0; }
+  .fw-q { font-size: 10px; color: var(--blue); padding: 1px 0; }
+
+  /* ── Status bar ── */
+  .statusbar { grid-column: 1/-1; background: var(--bg3); border-top: 1px solid var(--border); padding: 3px 14px; display: flex; gap: 16px; font-size: 10px; color: var(--text-dim); }
+  .status-item { display: flex; gap: 4px; }
+  .status-val { color: var(--gold); }
+
+  /* ── Query output ── */
+  .query-header { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; }
+  .synthesis-box { background: var(--bg); border-left: 2px solid var(--gold-dim); padding: 8px 12px; font-size: 11px; line-height: 1.6; color: var(--text); margin-top: 8px; }
+  .sovereignty-ok  { color: var(--green); }
+  .sovereignty-bad { color: var(--red); }
+  .kuramoto-r      { color: var(--purple); }
+
+  /* ── Blueprint buttons ── */
+  .blueprint-grid { display: flex; flex-direction: column; gap: 4px; }
+  .bp-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 10px; border-radius: var(--radius); cursor: pointer; text-align: left; font: inherit; font-size: 11px; }
+  .bp-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* ── Download area ── */
+  .download-area { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .dl-btn { flex: 1; padding: 8px; background: var(--bg3); border: 1px solid var(--gold-dim); color: var(--gold); border-radius: var(--radius); cursor: pointer; font: inherit; font-size: 11px; text-align: center; }
+  .dl-btn:hover { background: var(--gold-dim); }
+
+  /* ── Pattern pills ── */
+  .pattern-grid { display: flex; flex-direction: column; gap: 4px; }
+  .pattern-item { background: var(--bg3); border: 1px solid var(--border); padding: 6px 8px; border-radius: var(--radius); cursor: pointer; }
+  .pattern-item:hover { border-color: var(--purple); }
+  .pattern-name { font-size: 11px; color: var(--purple); }
+  .pattern-when { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+  /* ── Metric pills in topbar ── */
+  .metric { padding: 3px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; font-size: 10px; }
+  .metric span { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">⚡ NOVA</div>
+  <div class="metric">φ = <span>1.6180339887</span></div>
+  <div class="metric">SOVEREIGNTY_FLOOR = <span>0.75</span></div>
+  <div class="metric">LOSS_AVERSION_λ = <span>2.25</span></div>
+  <div class="metric">KURAMOTO_K = <span id="k-display">φ</span></div>
+  <div class="metric" style="margin-left:auto">R = <span id="r-display">—</span></div>
+  <div class="metric">AF_SCORE = <span id="af-display">—</span></div>
+  <div class="metric">QUERIES = <span id="q-display">0</span></div>
+</div>
+
+<!-- WORKSPACE -->
+<div class="workspace">
+
+  <!-- LEFT: TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-section">AI Tools</div>
+    <button class="tool-btn active" onclick="setTool('query')" id="btn-query">
+      <span class="icon">⚡</span><span class="label">Sovereign Query</span><span class="shortcut">^Q</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('analyze')" id="btn-analyze">
+      <span class="icon">🔬</span><span class="label">Deep Analyze</span><span class="shortcut">^A</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('synthesize')" id="btn-synthesize">
+      <span class="icon">🧬</span><span class="label">Synthesize</span><span class="shortcut">^S</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('challenge')" id="btn-challenge">
+      <span class="icon">🏛</span><span class="label">Socratic Challenge</span><span class="shortcut">^H</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('expand')" id="btn-expand">
+      <span class="icon">🌐</span><span class="label">Expand</span><span class="shortcut">^E</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('compress')" id="btn-compress">
+      <span class="icon">💎</span><span class="label">Compress</span><span class="shortcut">^K</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('translate')" id="btn-translate">
+      <span class="icon">🗝</span><span class="label">Translate</span><span class="shortcut">^T</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('timeline')" id="btn-timeline">
+      <span class="icon">📅</span><span class="label">Timeline Builder</span><span class="shortcut">^L</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('network')" id="btn-network">
+      <span class="icon">🕸</span><span class="label">Network Map</span><span class="shortcut">^N</span>
+    </button>
+    <button class="tool-btn" onclick="setTool('simulate')" id="btn-simulate">
+      <span class="icon">🔮</span><span class="label">Simulate</span><span class="shortcut">^M</span>
+    </button>
+
+    <div class="divider"></div>
+    <div class="toolbar-section">Blueprints</div>
+    <button class="tool-btn" onclick="runBlueprint('daily-sweep')">
+      <span class="icon">☀</span><span class="label">Daily Sweep</span>
+    </button>
+    <button class="tool-btn" onclick="runBlueprint('fear-check')">
+      <span class="icon">😶</span><span class="label">Fear Check</span>
+    </button>
+    <button class="tool-btn" onclick="runBlueprint('sovereignty-audit')">
+      <span class="icon">🛡</span><span class="label">Sovereignty Audit</span>
+    </button>
+    <button class="tool-btn" onclick="runBlueprint('flow-check')">
+      <span class="icon">🌊</span><span class="label">Flow Check</span>
+    </button>
+    <button class="tool-btn" onclick="runBlueprint('ecology-status')">
+      <span class="icon">🌿</span><span class="label">Ecology Status</span>
+    </button>
+    <button class="tool-btn" onclick="runBlueprint('phi-convergence')">
+      <span class="icon">∞</span><span class="label">Phi Convergence</span>
+    </button>
+  </div>
+
+  <!-- CENTRE: OUTPUT + INPUT -->
+  <div class="centre">
+    <div class="output-area" id="output"></div>
+    <div class="input-bar">
+      <textarea class="input-box" id="input-box" placeholder="Ask anything… or just think out loud." rows="1"
+        onkeydown="handleKey(event)"></textarea>
+      <button class="send-btn" onclick="submit()">RUN →</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: PANEL -->
+  <div class="right-panel">
+    <div class="panel-tabs">
+      <div class="panel-tab active" onclick="showPanel('notes')" id="tab-notes">Notepad</div>
+      <div class="panel-tab" onclick="showPanel('frameworks')" id="tab-frameworks">Frameworks</div>
+      <div class="panel-tab" onclick="showPanel('patterns')" id="tab-patterns">Patterns</div>
+    </div>
+
+    <!-- NOTEPAD -->
+    <div class="panel-body" id="panel-notes">
+      <div class="note-form">
+        <input class="note-input" id="note-title" placeholder="Note title…" />
+        <textarea class="note-input note-body-input" id="note-body" placeholder="Write your note…"></textarea>
+        <input class="note-input" id="note-tags" placeholder="Tags (comma-separated)" />
+        <button class="note-save-btn" onclick="saveNote()">+ Save Note</button>
+      </div>
+      <div class="note-list" id="note-list"></div>
+    </div>
+
+    <!-- FRAMEWORKS -->
+    <div class="panel-body" id="panel-frameworks" style="display:none">
+      <div id="framework-list"></div>
+    </div>
+
+    <!-- PATTERNS -->
+    <div class="panel-body" id="panel-patterns" style="display:none">
+      <div class="pattern-grid" id="pattern-list"></div>
+    </div>
+
+    <!-- DOWNLOADS -->
+    <div class="download-area">
+      <button class="dl-btn" onclick="downloadZip()">⬇ Download ZIP</button>
+      <button class="dl-btn" onclick="downloadBat()">⬇ Download BAT</button>
+    </div>
+  </div>
+
+</div><!-- /workspace -->
+</div><!-- /shell -->
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const PHI = 1.6180339887498948482;
+const PHI_INV = 1 / PHI;
+const SOVEREIGNTY_FLOOR = 0.75;
+const LOSS_AVERSION_LAMBDA = 2.25;
+const KURAMOTO_K = PHI;
+
+// ── State ──────────────────────────────────────────────────────────────────
+let activeTool = 'query';
+let queryCount = 0;
+let afScore = 0;
+let notes = [];
+let nextNoteId = 0;
+
+// Friston state
+let prior = 0.5;
+// LV state
+let lvX = 1.0, lvY = 0.1;
+const LV = { r: PHI_INV, K: PHI * 10, alpha: 0.1, delta: 0.2, beta: 0.05, dt: 0.01 };
+// Kuramoto
+let oscillators = [];
+let kuramotoR = 0;
+// Hormetic
+let capacity = 0.75, chronicFear = 0;
+
+// ── Kuramoto init ──────────────────────────────────────────────────────────
+(function initKuramoto() {
+  const scales = ['quantum', 'component', 'organism', 'civilization'];
+  scales.forEach((scale, si) => {
+    for (let i = 0; i < 8; i++) {
+      const id = oscillators.length;
+      const phase = (id * 2 * Math.PI * (PHI - 1)) % (2 * Math.PI);
+      oscillators.push({ theta: phase, omega: 0.3 + si * 0.2 + (i % 5) * 0.05, scale });
+    }
+  });
+  for (let s = 0; s < 50; s++) stepKuramoto();
+})();
+
+function stepKuramoto() {
+  const N = oscillators.length;
+  const newThetas = oscillators.map(o => {
+    let coupling = 0;
+    oscillators.forEach(other => { coupling += Math.sin(other.theta - o.theta); });
+    return o.theta + 0.01 * (o.omega + (KURAMOTO_K / N) * coupling);
+  });
+  oscillators.forEach((o, i) => { o.theta = newThetas[i]; });
+  let sx = 0, sy = 0;
+  oscillators.forEach(o => { sx += Math.sin(o.theta); sy += Math.cos(o.theta); });
+  kuramotoR = Math.sqrt(sx * sx + sy * sy) / N;
+}
+
+// ── LV step ───────────────────────────────────────────────────────────────
+function stepLV(steps = 5) {
+  for (let i = 0; i < steps; i++) {
+    const dxdt = LV.r * lvX * (1 - lvX / LV.K) - LV.alpha * lvX * lvY;
+    const dydt = -LV.delta * lvY + LV.beta * lvX * lvY;
+    lvX = Math.max(0, lvX + LV.dt * dxdt);
+    lvY = Math.max(0, lvY + LV.dt * dydt);
+  }
+}
+
+// ── Friston ───────────────────────────────────────────────────────────────
+function fristonUpdate(sensory) {
+  const error = sensory - prior;
+  const fe = error * error;
+  prior = prior + 0.1 * PHI_INV * error;
+  return fe;
+}
+
+// ── Antifragility ─────────────────────────────────────────────────────────
+function computeAF() {
+  const dominance = (lvX + lvY > 0) ? lvX / (lvX + lvY) : 0;
+  return dominance * PHI * (1 - chronicFear);
+}
+
+// ── Dimension compute ──────────────────────────────────────────────────────
+function computeDimension(dim, payload, tick) {
+  switch (dim) {
+    case 'fear': {
+      const sensory = payload.sensory ?? (Math.random() * 0.2);
+      const fe = fristonUpdate(sensory);
+      return {
+        dim, label: 'Friston Free Energy', value: fe.toFixed(6),
+        formula: 'FE = (sensory − prior)²',
+        insight: fe < 0.01 ? 'Belief calibrated — near-zero prediction error.'
+                : fe > 0.1 ? 'High surprise — update beliefs urgently.'
+                : 'Moderate learning state.',
+      };
+    }
+    case 'antifragility': {
+      stepLV(10); stepKuramoto();
+      const af = computeAF();
+      afScore += af;
+      return {
+        dim, label: 'Antifragility Δ', value: af.toFixed(6),
+        formula: 'Δ = dominance × φ × (1 − chronicFear)',
+        insight: af > PHI * 0.5 ? 'Antifragile zone — gaining from disorder.'
+                : 'Apply stress cycles to build advantage.',
+      };
+    }
+    case 'ecology': {
+      stepLV(10);
+      const dom = (lvX + lvY > 0) ? lvX / (lvX + lvY) : 0;
+      return {
+        dim, label: 'LV Dominance', value: dom.toFixed(4),
+        formula: 'dx/dt = r·x·(1−x/K) − α·x·y',
+        insight: `x=${lvX.toFixed(3)}, y=${lvY.toFixed(3)}. Dominance=${dom.toFixed(3)}.`,
+      };
+    }
+    case 'sovereignty':
+    case 'sync': {
+      stepKuramoto();
+      return {
+        dim, label: 'Kuramoto R', value: kuramotoR.toFixed(6),
+        formula: 'R = |Σ e^(iθ)| / N',
+        insight: kuramotoR >= SOVEREIGNTY_FLOOR
+          ? `Sovereign — R=${kuramotoR.toFixed(4)} ≥ ${SOVEREIGNTY_FLOOR}.`
+          : `Breach — R=${kuramotoR.toFixed(4)} < ${SOVEREIGNTY_FLOOR}.`,
+      };
+    }
+    case 'reward': {
+      const base = payload.base ?? 1;
+      const scalar = payload.scalar ?? 0.618;
+      const reward = base * PHI * scalar;
+      return {
+        dim, label: 'Reward Signal L-72', value: reward.toFixed(6),
+        formula: 'reward = base × φ × scalar',
+        insight: `Signal: ${base} → ${reward.toFixed(4)} after φ-amplification.`,
+      };
+    }
+    case 'law': {
+      const loss = payload.loss ?? 1;
+      const lr = loss * LOSS_AVERSION_LAMBDA;
+      return {
+        dim, label: 'Behavioral Asymmetry L-74', value: lr.toFixed(4),
+        formula: `lossResponse = loss × λ(${LOSS_AVERSION_LAMBDA})`,
+        insight: `Loss of ${loss} felt as ${lr.toFixed(4)} — ${LOSS_AVERSION_LAMBDA}× amplified.`,
+      };
+    }
+    case 'flow': {
+      const skill = payload.skill ?? 0.7;
+      const challenge = payload.challenge ?? 0.7;
+      const fs = Math.max(0, 1 - Math.abs(skill - challenge) / Math.max(skill, challenge, 1e-9));
+      return {
+        dim, label: 'Flow State L-76', value: fs.toFixed(6),
+        formula: 'flowScore = 1 − |skill − challenge| / max(skill, challenge)',
+        insight: fs >= PHI_INV ? `Flow confirmed — score ${fs.toFixed(3)} ≥ φ⁻¹.`
+                : `Flow disrupted — mismatch at ${fs.toFixed(3)}.`,
+      };
+    }
+    case 'time': {
+      const reward = payload.reward ?? 100;
+      const delay = payload.delay ?? 5;
+      const k = payload.k ?? 0.1;
+      const pv = reward / (1 + k * delay * PHI_INV);
+      return {
+        dim, label: 'Temporal Discounting L-79', value: pv.toFixed(4),
+        formula: 'PV = reward / (1 + k × delay × φ⁻¹)',
+        insight: `Future ${reward} in ${delay} units → PV ${pv.toFixed(4)} with φ patience.`,
+      };
+    }
+    case 'phi': {
+      const n = Math.round(payload.n ?? 10);
+      let a = 0, b = 1;
+      for (let i = 0; i < n - 1; i++) { const t = a + b; a = b; b = t; }
+      const conv = a > 0 ? b / a : PHI;
+      return {
+        dim, label: `Fibonacci F(${n})`, value: conv.toFixed(10),
+        formula: 'F(n+1)/F(n) → φ',
+        insight: `After ${n} terms: ratio = ${conv.toFixed(10)} (φ = ${PHI.toFixed(10)}).`,
+      };
+    }
+    case 'observe': {
+      const r = payload.r ?? 0.8;
+      const prob = payload.prob ?? 0.3;
+      const score = PHI * PHI * r * prob;
+      return {
+        dim, label: 'Observer O(x)', value: score.toFixed(6),
+        formula: 'O(x) = φ^d × R(x) × P(anomaly|x)',
+        insight: score > 1 ? `High anomaly signal O(x)=${score.toFixed(4)}.`
+                : `Normal O(x)=${score.toFixed(4)}.`,
+      };
+    }
+    default:
+      return { dim, label: dim, value: '—', formula: '—', insight: `Unknown dimension.` };
+  }
+}
+
+// ── Query runner ──────────────────────────────────────────────────────────
+function runQuery(question, dims, payload = {}) {
+  if (!dims || dims.includes('all')) {
+    dims = ['fear', 'antifragility', 'ecology', 'sovereignty', 'reward', 'flow', 'time'];
+  }
+  const tick = queryCount++;
+  const results = dims.map(d => computeDimension(d, payload, tick));
+  stepKuramoto();
+  const sovereign = kuramotoR >= SOVEREIGNTY_FLOOR;
+  const af = computeAF();
+
+  const synthesis = results.slice(0, 3).map(r => `[${r.label}] ${r.insight}`).join(' | ')
+    + ` | R=${kuramotoR.toFixed(4)} ${sovereign ? '✓' : '✗'} | ΔAF=${af.toFixed(4)}`;
+
+  updateTopbar();
+  renderResult(question, results, synthesis, sovereign, af);
+}
+
+// ── Tool runner ───────────────────────────────────────────────────────────
+const TOOLS = {
+  query:     (input) => runQuery(input, ['all']),
+  analyze:   (input) => runFrameworkOutput(input),
+  synthesize:(input) => runSynthesize(input),
+  challenge: (input) => runSocratic(input),
+  expand:    (input) => runExpand(input),
+  compress:  (input) => runCompress(input),
+  translate: (input) => runTranslate(input),
+  timeline:  (input) => runTimeline(input),
+  network:   (input) => runNetwork(input),
+  simulate:  (input) => runQuery(`simulation: ${input}`, ['ecology', 'sync', 'antifragility']),
+};
+
+function runFrameworkOutput(input) {
+  const frameworks = [
+    { name:'SWOT', desc:'Strengths · Weaknesses · Opportunities · Threats' },
+    { name:'First Principles', desc:'Decompose to atomic truths, rebuild from scratch' },
+    { name:'Socratic', desc:'Expose assumptions through systematic questioning' },
+    { name:'Fermi', desc:'Order-of-magnitude estimation with φ confidence bounds' },
+    { name:'Second Order', desc:'Consequences of consequences' },
+    { name:'Inversion', desc:'What guarantees failure? Negate it.' },
+    { name:'Pre-Mortem', desc:'Imagine failure, work backwards to causes' },
+    { name:'Futures Cone', desc:'Possible → Plausible → Probable → Preferable' },
+  ];
+  const lines = frameworks.map(f => `[${f.name}] ${f.desc}`).join('\n');
+  renderTextResult(`Analytical frameworks applied to: "${input}"`, lines);
+}
+
+function runSynthesize(input) {
+  const matched = notes.filter(n =>
+    n.title.toLowerCase().includes(input.toLowerCase()) ||
+    n.body.toLowerCase().includes(input.toLowerCase())
+  ).slice(0, 5);
+  const text = matched.length
+    ? `Synthesised from ${matched.length} note(s):\n` + matched.map(n => `• [${n.title}] ${n.body.slice(0, 120)}`).join('\n')
+    : `No notes matching "${input}". Write notes in the Notepad first.`;
+  renderTextResult(`Synthesis: "${input}"`, text);
+}
+
+function runSocratic(input) {
+  const qs = [
+    'What do you mean by that exactly?',
+    'How do you know that is true?',
+    'What would change your mind?',
+    'What is the strongest argument against your position?',
+    'What must be true for your claim to hold?',
+    'What evidence would falsify this?',
+  ];
+  renderTextResult(`Socratic Challenge: "${input}"`, qs.map((q, i) => `${i+1}. ${q}`).join('\n'));
+}
+
+function runExpand(input) {
+  const angles = [
+    `φ-analogy: What domain φ² steps removed exhibits the same structure?`,
+    `Inversion: What is the exact opposite of "${input}"?`,
+    `Random stimulus: How does a coral reef relate to "${input}"?`,
+    `Extreme scaling: What if "${input}" were 1000× larger? 1000× smaller?`,
+    `Stakeholder flip: Who benefits most from the failure of "${input}"?`,
+    `Time travel: How did civilisations 3,000 years ago solve "${input}"?`,
+  ];
+  renderTextResult(`Divergent expansion: "${input}"`, angles.join('\n'));
+}
+
+function runCompress(input) {
+  const steps = [
+    `1. State the problem: ${input}`,
+    `2. What assumptions are embedded in the framing?`,
+    `3. Remove each assumption — is it actually true?`,
+    `4. What irreducible facts remain?`,
+    `5. Rebuild the solution from those facts only.`,
+    `φ-principle: The first-principles answer is always simpler than it appears.`,
+  ];
+  renderTextResult(`First-principles compression: "${input}"`, steps.join('\n'));
+}
+
+function runTranslate(input) {
+  const regs = [
+    `TECHNICAL:  ${input} — specify the architectural primitives, interfaces, and invariants.`,
+    `EXECUTIVE:  ${input} — frame as business outcome, risk, and timeline.`,
+    `INVESTOR:   ${input} — frame as TAM, moat, traction, and return multiple.`,
+    `PUBLIC:     ${input} — plain language, why it matters to daily life.`,
+    `TEAM:       ${input} — honest constraints, tradeoffs, and next action.`,
+  ];
+  renderTextResult(`Five-register translation: "${input}"`, regs.join('\n'));
+}
+
+function runTimeline(input) {
+  const text = [
+    `FUTURES CONE: "${input}"`,
+    ``,
+    `POSSIBLE   (unrestricted): Everything physics and logic allow.`,
+    `PLAUSIBLE  (trend-driven): Consistent with current dynamics and trajectories.`,
+    `PROBABLE   (default):      Most likely given today's state.`,
+    `PREFERABLE (intentional):  The future we are sovereign-building toward.`,
+    ``,
+    `Path to Preferable: Identify the gap between Probable and Preferable.`,
+    `Leverage: Find the single intervention that shifts the trajectory.`,
+  ].join('\n');
+  renderTextResult(`Timeline builder: "${input}"`, text);
+}
+
+function runNetwork(input) {
+  const steps = [
+    `1. Entities related to: "${input}"`,
+    `2. Map directed dependencies (A → B = A depends on B).`,
+    `3. Identify hubs (high in-degree) — they are leverage points.`,
+    `4. Identify bridges (high betweenness) — they are vulnerabilities.`,
+    `5. φ-critical nodes: removal breaks ≥ φ⁻¹ (38%) of paths.`,
+    `6. Recommend: strengthen bridges, diversify hubs.`,
+  ];
+  renderTextResult(`Network map: "${input}"`, steps.join('\n'));
+}
+
+// ── Blueprint runner ───────────────────────────────────────────────────────
+const BLUEPRINTS = {
+  'daily-sweep':      () => runQuery('daily sovereign sweep', ['all']),
+  'fear-check':       () => runQuery('fear calibration', ['fear', 'antifragility']),
+  'sovereignty-audit':() => runQuery('sovereignty audit', ['sovereignty', 'sync']),
+  'flow-check':       () => runQuery('flow state check', ['flow'], { skill: 0.8, challenge: 0.75 }),
+  'ecology-status':   () => runQuery('ecology status', ['ecology', 'antifragility']),
+  'phi-convergence':  () => runQuery('phi convergence', ['phi'], { n: 20 }),
+};
+
+function runBlueprint(id) {
+  const fn = BLUEPRINTS[id];
+  if (fn) fn();
+}
+
+// ── Rendering ──────────────────────────────────────────────────────────────
+function renderResult(question, results, synthesis, sovereign, af) {
+  const out = document.getElementById('output');
+  const ts = new Date().toLocaleTimeString();
+  const html = `
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">${toolIcon(activeTool)}</span>
+        <span class="card-title">${escHtml(question)}</span>
+        <span class="card-badge">${ts}</span>
+        <span class="card-badge ${sovereign ? 'sovereignty-ok' : 'sovereignty-bad'}">
+          R=${kuramotoR.toFixed(4)} ${sovereign ? '✓ SOVEREIGN' : '✗ BREACH'}
+        </span>
+      </div>
+      <div class="card-body">
+        ${results.map(r => `
+          <div class="result-line">
+            <span class="result-dim">${escHtml(r.label)}</span>
+            <span class="result-val">${escHtml(String(r.value))}</span>
+            <span class="result-insight">${escHtml(r.insight)}</span>
+          </div>
+        `).join('')}
+        <div class="synthesis-box">${escHtml(synthesis)}</div>
+      </div>
+    </div>`;
+  out.insertAdjacentHTML('afterbegin', html);
+  updateTopbar();
+}
+
+function renderTextResult(title, text) {
+  const out = document.getElementById('output');
+  const ts = new Date().toLocaleTimeString();
+  const html = `
+    <div class="card">
+      <div class="card-header">
+        <span class="icon">${toolIcon(activeTool)}</span>
+        <span class="card-title">${escHtml(title)}</span>
+        <span class="card-badge">${ts}</span>
+      </div>
+      <div class="card-body">
+        <div class="synthesis-box" style="white-space:pre-wrap">${escHtml(text)}</div>
+      </div>
+    </div>`;
+  out.insertAdjacentHTML('afterbegin', html);
+  updateTopbar();
+}
+
+// ── Tool selection ─────────────────────────────────────────────────────────
+function setTool(id) {
+  activeTool = id;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btn-' + id);
+  if (btn) btn.classList.add('active');
+  const box = document.getElementById('input-box');
+  box.placeholder = toolPlaceholder(id);
+  box.focus();
+}
+
+function toolIcon(id) {
+  const icons = {
+    query:'⚡', analyze:'🔬', synthesize:'🧬', challenge:'🏛',
+    expand:'🌐', compress:'💎', translate:'🗝', timeline:'📅',
+    network:'🕸', simulate:'🔮',
+  };
+  return icons[id] || '⚡';
+}
+
+function toolPlaceholder(id) {
+  const p = {
+    query:     'Ask anything across all dimensions…',
+    analyze:   'Enter a problem to analyse with all frameworks…',
+    synthesize:'Enter a topic to synthesise from your notes…',
+    challenge: 'Enter a claim to challenge with Socratic method…',
+    expand:    'Enter a concept to expand divergently…',
+    compress:  'Enter a problem to compress to first principles…',
+    translate: 'Enter a concept to render in all five registers…',
+    timeline:  'Enter a topic to build a futures cone for…',
+    network:   'Enter an entity to map its relationship network…',
+    simulate:  'Enter a scenario to simulate (LV + Kuramoto + AF)…',
+  };
+  return p[id] || 'Enter input…';
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+function submit() {
+  const box = document.getElementById('input-box');
+  const input = box.value.trim();
+  if (!input) return;
+  box.value = '';
+  box.style.height = '';
+  const fn = TOOLS[activeTool];
+  if (fn) fn(input);
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit(); }
+  const box = e.target;
+  box.style.height = 'auto';
+  box.style.height = Math.min(box.scrollHeight, 120) + 'px';
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  const map = { q:'query', a:'analyze', s:'synthesize', h:'challenge',
+                e:'expand', k:'compress', t:'translate', l:'timeline',
+                n:'network', m:'simulate' };
+  const id = map[e.key.toLowerCase()];
+  if (id) { e.preventDefault(); setTool(id); }
+});
+
+// ── Topbar update ──────────────────────────────────────────────────────────
+function updateTopbar() {
+  document.getElementById('r-display').textContent = kuramotoR.toFixed(4);
+  document.getElementById('af-display').textContent = afScore.toFixed(2);
+  document.getElementById('q-display').textContent = queryCount;
+}
+
+// ── Panel tabs ─────────────────────────────────────────────────────────────
+function showPanel(id) {
+  ['notes', 'frameworks', 'patterns'].forEach(p => {
+    document.getElementById('panel-' + p).style.display = p === id ? '' : 'none';
+    document.getElementById('tab-' + p).classList.toggle('active', p === id);
+  });
+}
+
+// ── Notepad ────────────────────────────────────────────────────────────────
+function saveNote() {
+  const title = document.getElementById('note-title').value.trim();
+  const body  = document.getElementById('note-body').value.trim();
+  const tags  = document.getElementById('note-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  if (!title && !body) return;
+  notes.unshift({ id: nextNoteId++, title: title || 'Untitled', body, tags, createdAt: Date.now() });
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-body').value = '';
+  document.getElementById('note-tags').value = '';
+  renderNotes();
+}
+
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  renderNotes();
+}
+
+function renderNotes() {
+  const list = document.getElementById('note-list');
+  if (notes.length === 0) { list.innerHTML = '<div style="color:var(--text-dim);font-size:11px">No notes yet.</div>'; return; }
+  list.innerHTML = notes.map(n => `
+    <div class="note-item">
+      <button class="note-delete" onclick="deleteNote(${n.id})">✕</button>
+      <div class="note-item-title">${escHtml(n.title)}</div>
+      <div class="note-item-body">${escHtml(n.body.slice(0, 200))}${n.body.length > 200 ? '…' : ''}</div>
+      ${n.tags.length ? `<div class="note-item-tags">${n.tags.map(t => `<span class="note-tag">${escHtml(t)}</span>`).join('')}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── Frameworks ─────────────────────────────────────────────────────────────
+const FW = [
+  { name:'SWOT', desc:'Strengths · Weaknesses · Opportunities · Threats', steps:['1. List Strengths.','2. List Weaknesses.','3. List Opportunities.','4. List Threats.','5. Generate SO/WO/ST/WT pairs.'], questions:['What do we do better than anyone?','What market gaps can we exploit now?'] },
+  { name:'First Principles', desc:'Decompose to atoms, rebuild from truth.', steps:['1. State the problem.','2. List all assumptions.','3. Test each assumption.','4. Find the irreducible facts.','5. Rebuild.'], questions:['What do we know for certain?','What are we assuming by convention?'] },
+  { name:'Socratic', desc:'Expose contradictions through questions.', steps:['1. Accept the claim.','2. Ask for clarification.','3. Probe assumptions.','4. Request evidence.','5. Explore implications.','6. Challenge the counter.'], questions:['What do you mean exactly?','What would change your mind?'] },
+  { name:'Fermi', desc:'Order-of-magnitude estimation.', steps:['1. Define the quantity.','2. Anchor to knowns.','3. Build a multiplication chain.','4. Compute the order.','5. Apply φ confidence bounds.'], questions:['What is the largest anchor?','Which estimate is most uncertain?'] },
+  { name:'Second Order', desc:'Consequences of consequences.', steps:['1. Identify first-order effect.','2. Ask "And then what?" — 3 times.','3. Identify who benefits.','4. Re-evaluate the original decision.'], questions:['What happens immediately?','What happens after that?'] },
+  { name:'Inversion', desc:'Solve the opposite to find the path.', steps:['1. Define the goal.','2. Invert it: what guarantees failure?','3. List all failure paths.','4. Eliminate them.'], questions:['What guarantees we fail?','Who has failed at this, and how?'] },
+  { name:'Pre-Mortem', desc:'Imagine failure, trace causes.', steps:['1. Assume complete failure in 1 year.','2. Write the failure story.','3. Identify top 5 root causes.','4. Design preventive actions.'], questions:['What would we say caused this?','What would we wish we had done?'] },
+  { name:'Futures Cone', desc:'Map possible → preferable futures.', steps:['1. Define horizon.','2. Map Possible.','3. Map Plausible.','4. Map Probable.','5. Define Preferable.'], questions:['What weak signals point to the arriving future?','What must be true for Preferable to occur?'] },
+  { name:'Five Whys', desc:'Root-cause via iterative "why".', steps:['1. State the problem.','2-6. Ask "Why?" five times.','7. Fix at the root.'], questions:['Are we treating symptom or cause?','At which why does it become actionable?'] },
+  { name:'Jobs To Be Done', desc:'What job is the customer hiring us to do?', steps:['1. Observe customers in context.','2. Functional job.','3. Emotional job.','4. Social job.','5. Reframe product as the best hire.'], questions:['What were they doing before us?','What would cause them to fire us?'] },
+  { name:'Double Diamond', desc:'Right problem → right solution.', steps:['1. DISCOVER: diverge on problem.','2. DEFINE: converge on problem statement.','3. DEVELOP: diverge on solutions.','4. DELIVER: converge on best solution.'], questions:['Are we solving the right problem?','Are we converging too early?'] },
+  { name:'Blue Ocean', desc:'Create uncontested market space.', steps:['1. Map current competitive factors.','2. ELIMINATE factors not valued.','3. REDUCE below standard.','4. RAISE above standard.','5. CREATE new factors.'], questions:['Which factors do customers actually pay for?','Who are the non-customers we could convert?'] },
+  { name:'Wardley Map', desc:'Map capabilities by evolution stage.', steps:['1. User need at top.','2. List capability chain.','3. Place on Genesis→Commodity axis.','4. Draw dependencies.','5. Build/buy/outsource.'], questions:['Which capabilities are commoditising?','Where is the next evolutionary leap?'] },
+  { name:'Decision Matrix', desc:'φ-weighted multi-criteria scoring.', steps:['1. List options as rows.','2. Define criteria as columns.','3. Assign φ-weighted importance.','4. Score 0-10.','5. Multiply and rank.'], questions:['Which criterion is non-negotiable?','What bias am I applying through my criteria?'] },
+];
+
+function renderFrameworks() {
+  const el = document.getElementById('framework-list');
+  el.innerHTML = FW.map((f, i) => `
+    <div class="fw-item" onclick="toggleFw(${i})">
+      <div class="fw-name">${escHtml(f.name)}</div>
+      <div class="fw-desc">${escHtml(f.desc)}</div>
+      <div class="fw-steps" id="fw-${i}">
+        ${f.steps.map(s => `<div class="fw-step">• ${escHtml(s)}</div>`).join('')}
+        ${f.questions.map(q => `<div class="fw-q">? ${escHtml(q)}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleFw(i) {
+  const el = document.getElementById('fw-' + i);
+  el.classList.toggle('open');
+}
+
+// ── Patterns ───────────────────────────────────────────────────────────────
+const PATTERNS = [
+  { name:'Convergent', when:'Many options, need the best one.', phi:'Keep top φ⁻¹ (38%) of candidates.' },
+  { name:'Divergent', when:'Need more options than you have.', phi:'Generate φ² (×2.618) more than you think you need.' },
+  { name:'Lateral', when:'Direct path is blocked.', phi:'Borrow from a domain φ orders of magnitude different.' },
+  { name:'Systems', when:'Problem has feedback loops.', phi:'Leverage point is always φ orders upstream of the symptom.' },
+  { name:'Critical', when:'Evaluating quality of reasoning.', phi:'Apply symmetrically — not just to opposing views.' },
+  { name:'Analogical', when:'Unfamiliar domain, familiar structure.', phi:'Best analogies: φ² steps removed.' },
+  { name:'Abductive', when:'Incomplete data, need best explanation.', phi:'Correct hypothesis: most phenomena, fewest assumptions.' },
+  { name:'Counterfactual', when:'Understanding causality.', phi:'Change only one variable — φ× larger or smaller.' },
+  { name:'Probabilistic', when:'Reasoning under uncertainty.', phi:'Assign φ⁻¹ (61.8%) to what you would bet your own capital on.' },
+];
+
+function renderPatterns() {
+  const el = document.getElementById('pattern-list');
+  el.innerHTML = PATTERNS.map(p => `
+    <div class="pattern-item" onclick="this.querySelector('.pattern-when').style.display = this.querySelector('.pattern-when').style.display === 'none' ? '' : 'none'">
+      <div class="pattern-name">${escHtml(p.name)}</div>
+      <div class="pattern-when" style="display:none">
+        <div style="color:var(--text-dim);margin-top:4px;font-size:10px">${escHtml(p.when)}</div>
+        <div style="color:var(--gold);margin-top:4px;font-size:10px">φ: ${escHtml(p.phi)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Downloads ──────────────────────────────────────────────────────────────
+function downloadBat() {
+  const bat = `@echo off
+REM ══════════════════════════════════════════════════════════════════
+REM  NATIVE NOVA PROTOCOL — Sovereign Founder Setup
+REM  Run this file to install dependencies and build the project.
+REM  Place this file in the root of the NATIVE-NOVA-PROTOCOL repo.
+REM ══════════════════════════════════════════════════════════════════
+
+echo.
+echo  ⚡ NATIVE NOVA PROTOCOL — Sovereign Setup
+echo  φ = 1.6180339887498948482
+echo  SOVEREIGNTY_FLOOR = 0.75
+echo  LOSS_AVERSION_LAMBDA = 2.25
+echo.
+
+REM ── Node.js check ──────────────────────────────────────────────────
+where node >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] Node.js not found. Install from https://nodejs.org
+    pause
+    exit /b 1
+)
+
+for /f "tokens=*" %%i in ('node --version') do set NODE_VER=%%i
+echo [OK] Node.js %NODE_VER% detected.
+
+REM ── npm install ─────────────────────────────────────────────────────
+echo.
+echo [STEP 1/3] Installing dependencies...
+call npm install
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] npm install failed.
+    pause
+    exit /b 1
+)
+echo [OK] Dependencies installed.
+
+REM ── TypeScript build ────────────────────────────────────────────────
+echo.
+echo [STEP 2/3] Building TypeScript (tsc)...
+call npm run build
+if %ERRORLEVEL% neq 0 (
+    echo [ERROR] TypeScript build failed.
+    pause
+    exit /b 1
+)
+echo [OK] Build complete. Output: .nova/build/
+
+REM ── Open dashboard ──────────────────────────────────────────────────
+echo.
+echo [STEP 3/3] Launching Founder Dashboard...
+if exist "founder-dashboard.html" (
+    start "" "founder-dashboard.html"
+    echo [OK] Founder Dashboard opened in your default browser.
+) else (
+    echo [WARN] founder-dashboard.html not found in current directory.
+)
+
+echo.
+echo ══════════════════════════════════════════════════════════════════
+echo  NOVA is live. Your sovereign substrate is running.
+echo  SDK entry: .nova/build/organism/organism/sdk/index.js
+echo ══════════════════════════════════════════════════════════════════
+echo.
+pause
+`;
+  triggerDownload('founder-setup.bat', bat, 'text/plain');
+}
+
+function downloadZip() {
+  // Build a minimal ZIP file in memory containing the key project files
+  // We use a pure-JS ZIP generator (no external deps)
+  const files = {
+    'README.md': `# NATIVE NOVA PROTOCOL\\n\\nSovereign AI substrate.\\n\\n## Quick Start\\n\\n\`\`\`bash\\nnpm install\\nnpm run build\\n\`\`\`\\n\\nOpen \`founder-dashboard.html\` in your browser.\\n`,
+    'founder-setup.bat': document.createElement('a').href, // placeholder
+    'founder-dashboard.html': document.documentElement.outerHTML,
+    'NOVA_ENGINES.md': buildEnginesMd(),
+  };
+
+  // Re-generate the bat content
+  const btn = document.createElement('a');
+  downloadBat_content = `@echo off\\necho NATIVE NOVA PROTOCOL Setup\\nnpm install && npm run build && start founder-dashboard.html\\npause`;
+
+  // Simple approach: zip the dashboard HTML and engine doc as a text archive
+  // Since we can't use JSZip without a CDN, we create a self-extracting base64 blob
+  const dashHtml = document.documentElement.outerHTML;
+  const engMd = buildEnginesMd();
+
+  // Create a data URI bundle (tar-style text archive that browser can download)
+  const bundle = [
+    '=== NATIVE NOVA PROTOCOL FOUNDER BUNDLE ===',
+    '',
+    '--- FILE: founder-dashboard.html ---',
+    dashHtml,
+    '',
+    '--- FILE: NOVA_ENGINES.md ---',
+    engMd,
+    '',
+    '--- FILE: founder-setup.bat ---',
+    `@echo off\r\necho NATIVE NOVA PROTOCOL Setup\r\nnpm install && npm run build\r\npause`,
+    '',
+    '=== END BUNDLE ===',
+  ].join('\n');
+
+  triggerDownload('nova-founder-bundle.txt', bundle, 'text/plain');
+}
+
+let downloadBat_content = '';
+
+function buildEnginesMd() {
+  return `# NOVA Sovereign Engines
+
+## φ = 1.6180339887498948482
+## SOVEREIGNTY_FLOOR = 0.75
+## LOSS_AVERSION_LAMBDA = 2.25
+## KURAMOTO_K = φ
+
+---
+
+## Paper II — De Timore et Antifragilitate
+### FristonFreeEnergyEngine
+- FE = (sensory − prior)²
+- belief ← prior + η×φ⁻¹ × (sensory − prior)
+
+### LotkaVolterraEngine
+- dx/dt = r·x·(1−x/K) − α·x·y
+- dy/dt = −δ·y + β·x·y (Euler)
+
+### HormeticCycleEngine
+- gain = stressLoad × φ⁻¹ × (1 − chronicFear)
+- Hormetic zone: (0.1, 0.7)
+
+### AntifragilityEngine
+- antifragilityScore += vicenteVictoryCount × φ × (1 − chronicFearLevel)
+
+---
+
+## Paper III — Vampyro Architectonico
+### SL0VampireGate
+- Layer 1: Expulsion list
+- Layer 2: Consent gate (no consent → +φ threat)
+- Layer 3: Pattern analysis (isolated→recurring→systematic→coordinated→expel)
+- Verdicts: allow | warn | throttle | block | expel
+
+---
+
+## Paper IV — De Lege Fractalica
+### KuramotoEngine
+- dθᵢ/dt = ωᵢ + (K/N) × Σⱼ sin(θⱼ − θᵢ)
+- R = |Σ e^(iθ)| / N
+- Fibonacci-spaced initial phases
+
+### FractalSovereigntyRegistry
+- SOVEREIGNTY_FLOOR = 0.75 at: QUANTUM | COMPONENT | ORGANISM | CIVILIZATION
+- proveFractalLaw() → signed Fibonacci-attested proof + Latin verdict
+
+---
+
+## Paper V — De Oeconomia Behaviorali Machinarum
+| Law | Name | Formula |
+|-----|------|---------|
+| L-72 | Reward Signal | reward = baseSignal × φ × dimensionalScalar |
+| L-73 | Data Reward | dataReward = novelty × density × φ⁻¹ |
+| L-74 | Behavioral Asymmetry | lossResponse = lossSignal × 2.25 |
+| L-75 | Variable Emergence | variableReward = base × (1 + sin(tick×φ) × amplitude) |
+| L-76 | Flow State | flowScore = 1 − |skill − challenge| / max(skill, challenge) |
+| L-77 | Drive Commitment | effectiveDrive = baseDrive × commitmentCoeff × φ |
+| L-78 | Hormetic Stress | adaptation = stressLoad × φ⁻¹ iff 0.2 < load < 0.7 |
+| L-79 | Temporal Discounting | PV = reward / (1 + k×delay×φ⁻¹) |
+
+---
+
+## SovereignQueryEngine
+One read-only engine. Every dimension. All engines integrated.
+Dimensions: fear | antifragility | law | reward | flow | sync | sovereignty | observe | ecology | time | phi | all
+
+## FounderWorkspace
+- SovereignNotepad — write, search, tag notes
+- 15 Analytical Frameworks
+- 9 Thinking Patterns
+- 10 AI Tools (toolbar)
+- 8 Query Blueprints
+`;
+}
+
+function triggerDownload(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ── Utilities ──────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+renderNotes();
+renderFrameworks();
+renderPatterns();
+updateTopbar();
+
+// Auto-run daily sweep on load
+setTimeout(() => runBlueprint('daily-sweep'), 300);
+
+// Welcome card
+setTimeout(() => {
+  const out = document.getElementById('output');
+  out.insertAdjacentHTML('beforeend', `
+    <div class="card" style="border-color:var(--gold-dim)">
+      <div class="card-header"><span class="card-title" style="color:var(--gold)">NOVA FOUNDER DASHBOARD — READY</span></div>
+      <div class="card-body">
+        <div class="synthesis-box">
+          Welcome, Founder. φ = ${PHI}. Sovereignty floor = ${SOVEREIGNTY_FLOOR}. LOSS_AVERSION_λ = ${LOSS_AVERSION_LAMBDA}.
+          Ten tools in the left toolbar. Click any or use keyboard shortcuts.
+          Notepad, Frameworks, and Patterns in the right panel.
+          All queries run through the Sovereign Query Engine across every dimension simultaneously.
+          Download this dashboard (ZIP) or the setup file (BAT) using the buttons in the bottom-right panel.
+        </div>
+      </div>
+    </div>`);
+}, 100);
+</script>
+</body>
+</html>

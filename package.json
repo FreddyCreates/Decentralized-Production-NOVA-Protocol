@@ -35,7 +35,10 @@
     "prepublishOnly": "npm run build",
     "test": "node tests/run.mjs",
     "itb": "node itb/run.mjs",
-    "fix": "./scripts/nova fix"
+    "fix": "./scripts/nova fix",
+    "deploy": "npx wrangler pages deploy public --project-name=nova-protocol",
+    "deploy:preview": "npx wrangler pages deploy public --project-name=nova-protocol --branch=preview",
+    "dev:local": "npx wrangler pages dev public --port=3000"
   },
   "keywords": [
     "ai", "sdk", "agi", "nova", "sovereign", "desktop",

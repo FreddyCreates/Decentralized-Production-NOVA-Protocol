@@ -1,0 +1,8 @@
+# Cloudflare Pages Configuration for NOVA Protocol Dashboard
+# Deploy command: npx wrangler pages deploy public --project-name=nova-protocol
+
+name = "nova-protocol"
+compatibility_date = "2024-12-01"
+
+[site]
+bucket = "./public"
