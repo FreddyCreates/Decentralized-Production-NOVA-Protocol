@@ -1,0 +1,19 @@
+{
+  "name": "NOVA ITB — Integration Test Bed",
+  "version": "1.0.0",
+  "description": "Self-hosted multi-runtime and substrate integration test bed",
+  "selfHosted": true,
+  "substrates": ["motoko", "typescript", "python", "cpp", "java", "webworker"],
+  "heartbeatCycles": 5,
+  "heartbeatMs": 873,
+  "emergenceThreshold": 0.89,
+  "kuramotoCoupling": 0.618,
+  "timeoutMs": 30000,
+  "organisms": {
+    "minPerSubstrate": 1,
+    "totalExpected": 46
+  },
+  "protocols": {
+    "totalExpected": 129
+  }
+}

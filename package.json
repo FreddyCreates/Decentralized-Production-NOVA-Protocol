@@ -34,6 +34,7 @@
     "build:organism": "tsc",
     "prepublishOnly": "npm run build",
     "test": "node tests/run.mjs",
+    "itb": "node itb/run.mjs",
     "fix": "./scripts/nova fix"
   },
   "keywords": [
