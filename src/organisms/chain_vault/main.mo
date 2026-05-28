@@ -111,6 +111,15 @@ persistent actor ChainVault {
     #IOTATangle;
     #Shimmer;
     #IOTAEvm;
+    #Solana;
+    #Cosmos;
+    #Polkadot;
+    #Cardano;
+    #Near;
+    #Sui;
+    #Aptos;
+    #TON;
+    #Algorand;
     #NovaChain;   // NOVA Protocol's sovereign chain layer
     #Other : Text;
   };
