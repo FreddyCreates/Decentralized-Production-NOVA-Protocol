@@ -32,8 +32,7 @@ export const authCommands = {
     config.set('org_id', result.data.org_id);
 
     console.log(chalk.green(`✓ Account created! Logged in as ${chalk.bold(answers.email)}`));
-    console.log(chalk.dim(`  API Token: ${result.data.api_token}`));
-    console.log(chalk.dim(`  Save this token — you'll need it for CI/CD`));
+    console.log(chalk.dim(`  API Token saved to config. View with: nova-cloud auth token`));
   },
 
   async login() {

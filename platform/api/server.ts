@@ -24,6 +24,7 @@ import { regionsRouter } from './routes/regions.js';
 import { authRouter } from './routes/auth.js';
 import { authMiddleware } from './middleware/auth.js';
 import { requestId } from './middleware/request-id.js';
+import { rateLimit } from './middleware/rate-limit.js';
 import { db } from './db/index.js';
 
 const logger = pino({ name: 'nova-cloud-api' });
@@ -54,15 +55,15 @@ app.get('/', (_req, res) => {
 });
 
 // ─── Public Routes ───────────────────────────────────────────────────────────
-app.use('/v1/auth', authRouter);
+app.use('/v1/auth', rateLimit({ windowMs: 60_000, max: 10 }), authRouter);
 
 // ─── Protected Routes ────────────────────────────────────────────────────────
-app.use('/v1/apps', authMiddleware, appsRouter);
-app.use('/v1/machines', authMiddleware, machinesRouter);
-app.use('/v1/deployments', authMiddleware, deploymentsRouter);
-app.use('/v1/secrets', authMiddleware, secretsRouter);
-app.use('/v1/logs', authMiddleware, logsRouter);
-app.use('/v1/regions', authMiddleware, regionsRouter);
+app.use('/v1/apps', authMiddleware, rateLimit({ windowMs: 60_000, max: 100 }), appsRouter);
+app.use('/v1/machines', authMiddleware, rateLimit({ windowMs: 60_000, max: 100 }), machinesRouter);
+app.use('/v1/deployments', authMiddleware, rateLimit({ windowMs: 60_000, max: 30 }), deploymentsRouter);
+app.use('/v1/secrets', authMiddleware, rateLimit({ windowMs: 60_000, max: 50 }), secretsRouter);
+app.use('/v1/logs', authMiddleware, rateLimit({ windowMs: 60_000, max: 200 }), logsRouter);
+app.use('/v1/regions', authMiddleware, rateLimit({ windowMs: 60_000, max: 100 }), regionsRouter);
 
 // ─── WebSocket for live logs ─────────────────────────────────────────────────
 wss.on('connection', (ws, req) => {
