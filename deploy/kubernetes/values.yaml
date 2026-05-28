@@ -152,3 +152,29 @@ airgapped:
   # Local package mirror
   packageMirror:
     url: "packages.sovereign.local"
+
+# ── NOVA Multi-Runtime Engine ─────────────────────────────────────────────────
+runtime:
+  # Enable the multi-substrate runtime engine
+  enabled: true
+  # HTTP port for runtime health/status/metrics/execute
+  port: 7700
+  # φ-derived heartbeat interval (540 × φ ≈ 873ms)
+  heartbeatMs: 873
+  # Active substrates for this deployment
+  substrates: "motoko,typescript,python,cpp,java,webworker"
+  # Kuramoto phase synchronization coupling constant
+  kuramotoCoupling: 0.618
+  # Emergence detection threshold
+  emergenceThreshold: 0.89
+  # Protocol binder load balancing: fibonacci, round-robin, capability, load-based
+  protocolLoadBalance: "fibonacci"
+
+# ── Integration Test Bed (ITB) ────────────────────────────────────────────────
+itb:
+  # Run ITB validation as init container before sovereign node starts
+  enabled: true
+  # Strict mode: fail pod startup if ITB does not pass
+  strict: false
+  # Timeout for ITB run (ms)
+  timeoutMs: 30000

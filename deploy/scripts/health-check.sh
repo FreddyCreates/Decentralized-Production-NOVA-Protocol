@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
         --continuous) CONTINUOUS=true; shift;;
         --help|-h)
             echo "Usage: $0 [--json] [--component NAME] [--continuous]"
-            echo "Components: nodes, database, network, certificates, monitoring, governance, storage"
+            echo "Components: nodes, database, network, certificates, monitoring, governance, storage, runtime, substrates, itb"
             exit 0;;
         *) shift;;
     esac
@@ -419,6 +419,159 @@ check_storage() {
     fi
 }
 
+# ── NOVA Multi-Runtime Engine ─────────────────────────────────────────────────
+
+check_nova_runtime() {
+    echo ""
+    echo -e "${BOLD}${CYAN}Multi-Runtime Engine${RESET}"
+    echo -e "────────────────────────────────────────────"
+
+    local RUNTIME_PORT="${NOVA_RUNTIME_PORT:-7700}"
+    local runtime_url="http://localhost:${RUNTIME_PORT}"
+
+    # Check runtime health endpoint
+    local health_response
+    health_response=$(curl -sf "${runtime_url}/health" 2>/dev/null) || true
+
+    if [[ -n "${health_response}" ]]; then
+        local status
+        status=$(echo "${health_response}" | jq -r '.status' 2>/dev/null)
+        if [[ "${status}" == "healthy" ]]; then
+            check "Runtime Engine" "pass" "Multi-runtime engine healthy on :${RUNTIME_PORT}"
+        else
+            check "Runtime Engine" "warn" "Runtime status: ${status}"
+        fi
+
+        # Check cycle count
+        local cycles
+        cycles=$(echo "${health_response}" | jq -r '.cycle_count' 2>/dev/null)
+        if [[ "${cycles}" -gt 0 ]]; then
+            check "Heartbeat Active" "pass" "${cycles} cycles completed (873ms φ-interval)"
+        else
+            check "Heartbeat Active" "fail" "No heartbeat cycles detected"
+        fi
+
+        # Check organism count
+        local organisms
+        organisms=$(echo "${health_response}" | jq -r '.total_organisms' 2>/dev/null)
+        if [[ "${organisms}" -ge 40 ]]; then
+            check "Organisms Registered" "pass" "${organisms} organisms across multi-substrate"
+        else
+            check "Organisms Registered" "warn" "Only ${organisms} organisms (expected ≥48)"
+        fi
+
+        # Check emergence
+        local emergence
+        emergence=$(echo "${health_response}" | jq -r '.emergence_detected' 2>/dev/null)
+        if [[ "${emergence}" == "true" ]]; then
+            check "Emergence Detection" "pass" "Phase coherence above threshold"
+        else
+            check "Emergence Detection" "warn" "No emergence yet (normal during warm-up)"
+        fi
+    else
+        # Try via kubectl if direct access fails
+        local pod_runtime
+        pod_runtime=$(kubectl get pods -n "${NAMESPACE}" -l app.kubernetes.io/name=nova-sovereign \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || true
+
+        if [[ -n "${pod_runtime}" ]]; then
+            health_response=$(kubectl exec -n "${NAMESPACE}" "${pod_runtime}" -- \
+                curl -sf "http://localhost:${RUNTIME_PORT}/health" 2>/dev/null) || true
+            if [[ -n "${health_response}" ]]; then
+                check "Runtime Engine (via kubectl)" "pass" "Runtime accessible inside pod"
+            else
+                check "Runtime Engine" "fail" "Runtime not responding on :${RUNTIME_PORT}"
+            fi
+        else
+            check "Runtime Engine" "fail" "Cannot reach runtime on :${RUNTIME_PORT}"
+        fi
+    fi
+}
+
+# ── Substrate Validation ──────────────────────────────────────────────────────
+
+check_substrates() {
+    echo ""
+    echo -e "${BOLD}${CYAN}Multi-Substrate Status${RESET}"
+    echo -e "────────────────────────────────────────────"
+
+    local RUNTIME_PORT="${NOVA_RUNTIME_PORT:-7700}"
+    local status_response
+    status_response=$(curl -sf "http://localhost:${RUNTIME_PORT}/status" 2>/dev/null) || true
+
+    if [[ -n "${status_response}" ]]; then
+        local substrates
+        substrates=$(echo "${status_response}" | jq -r '.substrates | keys[]' 2>/dev/null)
+
+        local expected_substrates=("motoko" "typescript" "python" "cpp" "java" "webworker")
+        local active_count=0
+
+        for sub in "${expected_substrates[@]}"; do
+            local count
+            count=$(echo "${status_response}" | jq -r ".substrates.${sub} // 0" 2>/dev/null)
+            if [[ "${count}" -gt 0 ]]; then
+                check "Substrate: ${sub}" "pass" "${count} organisms active"
+                ((active_count++))
+            else
+                check "Substrate: ${sub}" "warn" "No organisms on this substrate"
+            fi
+        done
+
+        if [[ ${active_count} -ge 6 ]]; then
+            check "All Substrates Active" "pass" "${active_count}/6 substrates running"
+        elif [[ ${active_count} -ge 3 ]]; then
+            check "All Substrates Active" "warn" "${active_count}/6 substrates (partial)"
+        else
+            check "All Substrates Active" "fail" "Only ${active_count}/6 substrates active"
+        fi
+    else
+        check "Substrate Status" "warn" "Cannot query runtime status (runtime may be starting)"
+    fi
+}
+
+# ── ITB Validation ────────────────────────────────────────────────────────────
+
+check_itb() {
+    echo ""
+    echo -e "${BOLD}${CYAN}Integration Test Bed (ITB)${RESET}"
+    echo -e "────────────────────────────────────────────"
+
+    # Check if ITB validation log exists and passed
+    local ITB_LOG="${NOVA_DATA_DIR:-/opt/nova/data}/logs/itb-validation.log"
+
+    if [[ -f "${ITB_LOG}" ]]; then
+        if grep -q "ALL ITB CHECKS PASSED" "${ITB_LOG}" 2>/dev/null; then
+            local total
+            total=$(grep -o "Total:.*[0-9]" "${ITB_LOG}" | grep -o '[0-9]*' | tail -1)
+            check "ITB Validation" "pass" "All ${total:-32} checks passed at startup"
+        elif grep -q "FAILED" "${ITB_LOG}" 2>/dev/null; then
+            local failed
+            failed=$(grep -o "Failed:.*[0-9]" "${ITB_LOG}" | grep -o '[0-9]*' | tail -1)
+            check "ITB Validation" "fail" "${failed} ITB checks failed"
+        else
+            check "ITB Validation" "warn" "ITB ran but status unclear"
+        fi
+    else
+        # Try to run ITB live if accessible via kubectl
+        local pod_name
+        pod_name=$(kubectl get pods -n "${NAMESPACE}" -l app.kubernetes.io/name=nova-sovereign \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || true
+
+        if [[ -n "${pod_name}" ]]; then
+            local itb_result
+            itb_result=$(kubectl exec -n "${NAMESPACE}" "${pod_name}" -- \
+                cat /opt/nova/data/logs/itb-validation.log 2>/dev/null | tail -5) || true
+            if echo "${itb_result}" | grep -q "ALL ITB CHECKS PASSED" 2>/dev/null; then
+                check "ITB Validation (pod)" "pass" "ITB passed in sovereign container"
+            else
+                check "ITB Validation" "warn" "ITB log not found (ITB may be disabled)"
+            fi
+        else
+            check "ITB Validation" "warn" "No ITB log found (NOVA_RUN_ITB may be false)"
+        fi
+    fi
+}
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 
 print_summary() {
@@ -460,6 +613,9 @@ run_checks() {
             monitoring) check_monitoring;;
             governance) check_governance;;
             storage) check_storage;;
+            runtime) check_nova_runtime;;
+            substrates) check_substrates;;
+            itb) check_itb;;
             *) echo "Unknown component: ${COMPONENT}"; exit 1;;
         esac
     else
@@ -470,6 +626,9 @@ run_checks() {
         check_monitoring
         check_governance
         check_storage
+        check_nova_runtime
+        check_substrates
+        check_itb
     fi
     print_summary
 }

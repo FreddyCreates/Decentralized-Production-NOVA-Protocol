@@ -39,6 +39,21 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.itb.enabled }}
+      initContainers:
+        - name: itb-validation
+          image: "{{ .Values.sovereign.image.repository }}:{{ .Values.sovereign.image.tag }}"
+          imagePullPolicy: {{ .Values.sovereign.image.pullPolicy }}
+          command: ["node", "itb/run.mjs"]
+          env:
+            - name: NOVA_SUBSTRATES
+              value: {{ .Values.runtime.substrates | quote }}
+            - name: NOVA_HEARTBEAT_MS
+              value: {{ .Values.runtime.heartbeatMs | quote }}
+          {{- if .Values.itb.strict }}
+          # Strict: pod will not start if ITB fails
+          {{- end }}
+      {{- end }}
       containers:
         - name: sovereign
           image: "{{ .Values.sovereign.image.repository }}:{{ .Values.sovereign.image.tag }}"
@@ -64,6 +79,9 @@ spec:
               protocol: TCP
             - name: sovereign-api
               containerPort: 8443
+              protocol: TCP
+            - name: runtime
+              containerPort: {{ .Values.runtime.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
@@ -94,6 +112,22 @@ spec:
               value: {{ .Values.global.jurisdiction | quote }}
             - name: NOVA_CLASSIFICATION
               value: {{ .Values.global.classificationLevel | quote }}
+            - name: NOVA_SUBSTRATES
+              value: {{ .Values.runtime.substrates | quote }}
+            - name: NOVA_HEARTBEAT_MS
+              value: {{ .Values.runtime.heartbeatMs | quote }}
+            - name: NOVA_RUNTIME_PORT
+              value: {{ .Values.runtime.port | quote }}
+            - name: NOVA_KURAMOTO_COUPLING
+              value: {{ .Values.runtime.kuramotoCoupling | quote }}
+            - name: NOVA_EMERGENCE_THRESHOLD
+              value: {{ .Values.runtime.emergenceThreshold | quote }}
+            - name: NOVA_RUN_ITB
+              value: {{ .Values.itb.enabled | quote }}
+            - name: NOVA_ITB_STRICT
+              value: {{ .Values.itb.strict | quote }}
+            - name: NOVA_PROTOCOL_LOAD_BALANCE
+              value: {{ .Values.runtime.protocolLoadBalance | quote }}
       volumes:
         - name: keys
           secret:

@@ -105,6 +105,56 @@ variable "backup_retention_days" {
   default     = 90
 }
 
+# ── Multi-Runtime & Substrate Variables ─────────────────────────────────────
+
+variable "runtime_port" {
+  description = "Port for the NOVA multi-runtime engine HTTP service"
+  type        = number
+  default     = 7700
+}
+
+variable "runtime_heartbeat_ms" {
+  description = "φ-derived heartbeat interval in milliseconds (540 × φ ≈ 873)"
+  type        = number
+  default     = 873
+}
+
+variable "runtime_substrates" {
+  description = "Comma-separated list of active substrates"
+  type        = string
+  default     = "motoko,typescript,python,cpp,java,webworker"
+}
+
+variable "runtime_kuramoto_coupling" {
+  description = "Kuramoto phase synchronization coupling constant (φ^-1)"
+  type        = number
+  default     = 0.618
+}
+
+variable "runtime_emergence_threshold" {
+  description = "Phase coherence threshold for emergence detection"
+  type        = number
+  default     = 0.89
+}
+
+variable "runtime_protocol_load_balance" {
+  description = "Protocol binder load balancing strategy: fibonacci, round-robin, capability, load-based"
+  type        = string
+  default     = "fibonacci"
+}
+
+variable "itb_enabled" {
+  description = "Run Integration Test Bed validation during deployment"
+  type        = bool
+  default     = true
+}
+
+variable "itb_strict" {
+  description = "Abort deployment if ITB validation fails"
+  type        = bool
+  default     = false
+}
+
 # ── Namespace ─────────────────────────────────────────────────────────────────
 
 resource "kubernetes_namespace" "sovereign" {
@@ -266,6 +316,19 @@ resource "helm_release" "nova_sovereign" {
       }
       airgapped = {
         enabled = var.enable_airgapped
+      }
+      runtime = {
+        enabled              = true
+        port                 = var.runtime_port
+        heartbeatMs          = var.runtime_heartbeat_ms
+        substrates           = var.runtime_substrates
+        kuramotoCoupling     = var.runtime_kuramoto_coupling
+        emergenceThreshold   = var.runtime_emergence_threshold
+        protocolLoadBalance  = var.runtime_protocol_load_balance
+      }
+      itb = {
+        enabled  = var.itb_enabled
+        strict   = var.itb_strict
       }
     })
   ]

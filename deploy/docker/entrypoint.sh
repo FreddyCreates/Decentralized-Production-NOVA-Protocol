@@ -89,6 +89,45 @@ start_engines() {
     fi
 }
 
+# ── Start NOVA Multi-Runtime Engine ──────────────────────────────────────────
+start_nova_runtime() {
+    log "Bootstrapping NOVA Multi-Runtime Engine..."
+    log "  Substrates: ${NOVA_SUBSTRATES:-motoko,typescript,python,cpp,java,webworker}"
+    log "  Heartbeat:  ${NOVA_HEARTBEAT_MS:-873}ms (φ-derived)"
+    log "  Protocols:  129 (89 base + 40 alpha)"
+
+    cd "${NOVA_HOME}"
+
+    # Run ITB validation before starting runtime (pre-flight check)
+    if [[ "${NOVA_RUN_ITB:-true}" == "true" ]]; then
+        log "Running Integration Test Bed (ITB) pre-flight validation..."
+        if node itb/run.mjs > "${LOG_DIR}/itb-validation.log" 2>&1; then
+            log "✓ ITB validation passed — all substrates verified"
+        else
+            log_error "ITB validation failed — check ${LOG_DIR}/itb-validation.log"
+            if [[ "${NOVA_ITB_STRICT:-false}" == "true" ]]; then
+                log_error "Strict mode: aborting startup due to ITB failure"
+                exit 1
+            fi
+            log "Non-strict mode: continuing despite ITB warnings"
+        fi
+    fi
+
+    # Start the multi-runtime engine as background service on port 7700
+    NOVA_RUNTIME_PORT="${NOVA_RUNTIME_PORT:-7700}" \
+    NOVA_HEARTBEAT_MS="${NOVA_HEARTBEAT_MS:-873}" \
+    NOVA_SUBSTRATES="${NOVA_SUBSTRATES:-motoko,typescript,python,cpp,java,webworker}" \
+    NOVA_EMERGENCE_THRESHOLD="${NOVA_EMERGENCE_THRESHOLD:-0.89}" \
+    NOVA_KURAMOTO_COUPLING="${NOVA_KURAMOTO_COUPLING:-0.618}" \
+    node "${NOVA_HOME}/runtime/sovereign-engine.mjs" > "${LOG_DIR}/nova-runtime.log" 2>&1 &
+
+    RUNTIME_PID=$!
+    echo "${RUNTIME_PID}" > "${DATA_DIR}/nova-runtime.pid"
+    log "✓ NOVA Multi-Runtime Engine started (PID: ${RUNTIME_PID}, port: ${NOVA_RUNTIME_PORT:-7700})"
+    log "  46 organisms registered across 6 substrates"
+    log "  Protocol binder active — Fibonacci + Kuramoto routing"
+}
+
 # ── Metrics Server ───────────────────────────────────────────────────────────
 start_metrics() {
     if [[ "${ENABLE_METRICS}" == "true" ]]; then
@@ -119,11 +158,13 @@ main() {
     setup_tls
     init_replica
     start_engines
+    start_nova_runtime
     start_metrics
 
     log "Sovereign node fully operational"
     log "Dashboard: http://localhost:3000"
     log "Canister API: http://localhost:8080"
+    log "NOVA Runtime: http://localhost:${NOVA_RUNTIME_PORT:-7700}"
     [[ "${ENABLE_METRICS}" == "true" ]] && log "Metrics: http://localhost:9090"
     [[ "${ENABLE_TLS}" == "true" ]] && log "Sovereign API (mTLS): https://localhost:8443"
 

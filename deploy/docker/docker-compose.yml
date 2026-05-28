@@ -24,11 +24,19 @@ services:
       - NOVA_NETWORK=${NOVA_NETWORK:-local}
       - NOVA_ENABLE_TLS=${NOVA_ENABLE_TLS:-true}
       - NOVA_ENABLE_METRICS=${NOVA_ENABLE_METRICS:-true}
+      - NOVA_SUBSTRATES=${NOVA_SUBSTRATES:-motoko,typescript,python,cpp,java,webworker}
+      - NOVA_HEARTBEAT_MS=${NOVA_HEARTBEAT_MS:-873}
+      - NOVA_RUNTIME_PORT=${NOVA_RUNTIME_PORT:-7700}
+      - NOVA_RUN_ITB=${NOVA_RUN_ITB:-true}
+      - NOVA_ITB_STRICT=${NOVA_ITB_STRICT:-false}
+      - NOVA_EMERGENCE_THRESHOLD=${NOVA_EMERGENCE_THRESHOLD:-0.89}
+      - NOVA_KURAMOTO_COUPLING=${NOVA_KURAMOTO_COUPLING:-0.618}
     ports:
       - "${NOVA_REPLICA_PORT:-8080}:8080"
       - "${NOVA_DASHBOARD_PORT:-3000}:3000"
       - "${NOVA_METRICS_PORT:-9090}:9090"
       - "${NOVA_API_PORT:-8443}:8443"
+      - "${NOVA_RUNTIME_PORT:-7700}:7700"
     volumes:
       - nova-data:/opt/nova/data
       - nova-config:/opt/nova/config

@@ -3,13 +3,18 @@
 # Deployable by governments, states, and enterprises in air-gapped environments
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Stage 1: Build TypeScript SDK & Frontend
+# Stage 1: Build TypeScript SDK, Runtime & Frontend
 FROM node:20-alpine AS ts-builder
 WORKDIR /build
 COPY package.json package-lock.json tsconfig.json ./
 RUN npm ci --ignore-scripts
 COPY src/organism ./src/organism
 COPY src/frontend ./src/frontend
+COPY runtime ./runtime
+COPY organism ./organism
+COPY packages ./packages
+COPY itb ./itb
+COPY protocols ./protocols
 RUN npx tsc --project tsconfig.json || true
 
 # Stage 2: Build Rust Canisters (SSN modules)
@@ -62,6 +67,11 @@ RUN chown -R nova:nova /opt/nova
 
 # Copy built artifacts
 COPY --from=ts-builder /build/.nova/build ./sdk-build
+COPY --from=ts-builder /build/runtime ./runtime
+COPY --from=ts-builder /build/itb ./itb
+COPY --from=ts-builder /build/packages ./packages
+COPY --from=ts-builder /build/organism ./organism
+COPY --from=ts-builder /build/package.json ./package.json
 COPY --from=rust-builder /build/target/wasm32-unknown-unknown/release/*.wasm ./wasm/
 
 # Copy source and configuration
@@ -71,6 +81,9 @@ COPY protocols ./protocols
 COPY dfx.json nova.json sns_init.yaml ./
 COPY deploy/docker/entrypoint.sh /opt/nova/entrypoint.sh
 COPY deploy/docker/sovereign.env.template /opt/nova/sovereign.env.template
+
+# Install runtime Node.js dependencies for NOVA multi-substrate runtime
+RUN cd /opt/nova && npm install --omit=dev 2>/dev/null || true
 
 RUN chmod +x /opt/nova/entrypoint.sh
 
@@ -83,11 +96,12 @@ VOLUME ["/opt/nova/data", "/opt/nova/config", "/opt/nova/keys"]
 # 3000  - NOVA Dashboard / Admin Terminal
 # 9090  - Metrics (Prometheus-compatible)
 # 8443  - Sovereign API (mTLS)
-EXPOSE 8080 4943 3000 9090 8443
+# 7700  - NOVA Multi-Runtime Engine (heartbeat + protocol binder)
+EXPOSE 8080 4943 3000 9090 8443 7700
 
-# Health check
+# Health check — checks both IC replica and NOVA runtime
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/api/v2/status || exit 1
+    CMD curl -f http://localhost:8080/api/v2/status || curl -f http://localhost:7700/health || exit 1
 
 USER nova
 ENTRYPOINT ["/opt/nova/entrypoint.sh"]

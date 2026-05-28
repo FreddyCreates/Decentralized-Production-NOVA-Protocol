@@ -24,6 +24,10 @@ spec:
       targetPort: sovereign-api
       protocol: TCP
       name: sovereign-api
+    - port: {{ .Values.runtime.port }}
+      targetPort: runtime
+      protocol: TCP
+      name: runtime
   selector:
     app.kubernetes.io/name: nova-sovereign
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -66,6 +70,8 @@ spec:
           port: 8443
         - protocol: TCP
           port: 9090
+        - protocol: TCP
+          port: {{ .Values.runtime.port }}
     {{- if .Values.sovereign.networkPolicy.allowedCIDRs }}
     - from:
       {{- range .Values.sovereign.networkPolicy.allowedCIDRs }}
