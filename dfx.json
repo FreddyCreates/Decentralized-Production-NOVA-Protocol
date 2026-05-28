@@ -127,6 +127,46 @@
     "cloud_engine": {
       "main": "src/organisms/cloud_engine/main.mo",
       "type": "motoko"
+    },
+    "btc_bridge": {
+      "main": "src/organisms/btc_bridge/main.mo",
+      "type": "motoko"
+    },
+    "eth_bridge": {
+      "main": "src/organisms/eth_bridge/main.mo",
+      "type": "motoko"
+    },
+    "tangle_bridge": {
+      "main": "src/organisms/tangle_bridge/main.mo",
+      "type": "motoko"
+    },
+    "chain_vault": {
+      "main": "src/organisms/chain_vault/main.mo",
+      "type": "motoko"
+    },
+    "asset_profile": {
+      "main": "src/organisms/asset_profile/main.mo",
+      "type": "motoko"
+    },
+    "future_profile": {
+      "main": "src/organisms/future_profile/main.mo",
+      "type": "motoko"
+    },
+    "solana_bridge": {
+      "main": "src/organisms/solana_bridge/main.mo",
+      "type": "motoko"
+    },
+    "cosmos_bridge": {
+      "main": "src/organisms/cosmos_bridge/main.mo",
+      "type": "motoko"
+    },
+    "polkadot_bridge": {
+      "main": "src/organisms/polkadot_bridge/main.mo",
+      "type": "motoko"
+    },
+    "asset_security": {
+      "main": "src/organisms/asset_security/main.mo",
+      "type": "motoko"
     }
   },
   "defaults": {
