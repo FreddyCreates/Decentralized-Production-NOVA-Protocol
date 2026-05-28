@@ -124,6 +124,9 @@ jobs:
           npm run typecheck
           npm test
 
+      - name: Motoko sovereign check
+        run: ./scripts/nova check
+
       - name: Install frontend dependencies
         working-directory: src/frontend
         run: npm ci
@@ -226,6 +229,9 @@ jobs:
           name: frontend-build
           path: dist/
 
+      - name: Install dfx
+        run: sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+
       - name: Deploy to staging
         env:
           DFX_NETWORK: staging
@@ -233,12 +239,6 @@ jobs:
           echo "=== Deploying to Staging Environment ==="
           echo "Deployment timestamp: $(date -Iseconds)"
           echo "Commit SHA: ${{ github.sha }}"
-          echo ""
-          # Install dfx if not already available
-          if ! command -v dfx &> /dev/null; then
-            sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          fi
-          # Deploy all canisters to staging network
           dfx deploy --network staging --no-wallet
           echo "✓ Staging deployment complete"
 
@@ -265,13 +265,14 @@ jobs:
           name: frontend-build
           path: dist/
 
+      - name: Install dfx
+        run: sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
+
       - name: Pre-deployment health check
         run: |
           echo "=== Pre-deployment Health Check ==="
           echo "Verifying build artifacts..."
           ls -la dist/
-          echo ""
-          echo "Checking for critical files..."
           test -f dist/index.html && echo "✓ index.html present" || exit 1
           echo "✓ Pre-deployment checks passed"
 
@@ -282,13 +283,6 @@ jobs:
           echo "=== Deploying to Production (IC Mainnet) ==="
           echo "Deployment timestamp: $(date -Iseconds)"
           echo "Commit SHA: ${{ github.sha }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo ""
-          # Install dfx if not already available
-          if ! command -v dfx &> /dev/null; then
-            sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-          fi
-          # Deploy all canisters to IC mainnet
           dfx deploy --network ic --no-wallet
           echo "✓ Production deployment complete"
 
@@ -298,8 +292,6 @@ jobs:
           echo "Environment: Production (IC Mainnet)"
           echo "Version: ${{ github.sha }}"
           echo "Deployed at: $(date -Iseconds)"
-          echo ""
-          echo "Verifying canister health..."
           dfx canister --network ic status nova_token || true
           dfx canister --network ic status sovereign || true
           echo "✓ Post-deployment verification complete"
