@@ -127,6 +127,10 @@
     "cloud_engine": {
       "main": "src/organisms/cloud_engine/main.mo",
       "type": "motoko"
+    },
+    "nova_frontend": {
+      "type": "assets",
+      "source": ["public", "dist/pwa"]
     }
   },
   "defaults": {

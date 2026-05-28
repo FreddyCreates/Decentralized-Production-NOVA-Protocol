@@ -1,0 +1,40 @@
+{
+  "name": "NOVA Protocol — Sovereign AI",
+  "short_name": "NOVA",
+  "description": "23 sovereign AI engines, 19 permanent workers, φ-mathematics. Zero external dependencies.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#c9a84c",
+  "orientation": "any",
+  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    {
+      "src": "icons/nova-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/nova-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Chat with NOVA",
+      "short_name": "Chat",
+      "description": "Open AI chat interface",
+      "url": "/index.html#chat"
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Full substrate dashboard",
+      "url": "/index.html#dashboard"
+    }
+  ]
+}

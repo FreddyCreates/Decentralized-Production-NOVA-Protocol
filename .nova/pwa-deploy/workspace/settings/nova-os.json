@@ -1,0 +1,44 @@
+{
+  "system": {
+    "name": "NOVA-OS",
+    "version": "1.0.0",
+    "codename": "Aurum Primum",
+    "sovereignMode": true,
+    "defaultEngine": "NOV-001",
+    "mathPrecision": "extended",
+    "phiConstant": 1.6180339887498948482
+  },
+  "engines": {
+    "enableAll": true,
+    "defaultContextWindow": 128000,
+    "maxContextWindow": 2000000,
+    "attestationRequired": true,
+    "wireProtocol": "nova-wire"
+  },
+  "tokenizer": {
+    "vocabularySize": 131072,
+    "segmentationMethod": "phi-golden",
+    "hashMethod": "fibonacci",
+    "minTokenLength": 1,
+    "maxTokenLength": 24
+  },
+  "chat": {
+    "enableMiniAIs": true,
+    "miniCodeHelper": true,
+    "miniBackendTools": true,
+    "historyLimit": 10000,
+    "phiWeightedContext": true
+  },
+  "canisters": {
+    "enableSovereign": true,
+    "elementTable": true,
+    "goldAU": true,
+    "silverAG": true,
+    "crimson": true
+  },
+  "security": {
+    "fibonacciAttestation": true,
+    "e8LatticeEncryption": true,
+    "sovereignKeyManagement": true
+  }
+}

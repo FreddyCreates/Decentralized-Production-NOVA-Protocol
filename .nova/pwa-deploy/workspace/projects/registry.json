@@ -1,0 +1,60 @@
+{
+  "publicRepos": [
+    {
+      "name": "nova-tokenizer",
+      "repo": "ItsNotAILABS/nova-tokenizer",
+      "description": "Generate your own AI token IDs with φ-mathematics. No BPE, no SentencePiece, no rented tech.",
+      "status": "ready-to-extract",
+      "audience": "AI developers, NLP researchers, crypto-math enthusiasts",
+      "viralHook": "Your tokens, your math, your IDs."
+    },
+    {
+      "name": "phi-math",
+      "repo": "ItsNotAILABS/phi-math",
+      "description": "Golden-ratio mathematics library. PHI, Fibonacci hashing, Kuramoto oscillators.",
+      "status": "ready-to-extract",
+      "audience": "Mathematicians, game devs, graphics programmers",
+      "viralHook": "The math that runs the universe, in TypeScript."
+    },
+    {
+      "name": "nova-chat-terminal",
+      "repo": "ItsNotAILABS/nova-chat-terminal",
+      "description": "Interactive AI chat terminal with multi-engine routing. Plug any AI backend.",
+      "status": "ready-to-extract",
+      "audience": "CLI enthusiasts, AI developers, terminal power users",
+      "viralHook": "Route any prompt to any engine with one command."
+    },
+    {
+      "name": "fracture-100",
+      "repo": "ItsNotAILABS/fracture-100",
+      "description": "100 technology domain intelligence classifications. The tech knowledge graph.",
+      "status": "ready-to-extract",
+      "audience": "Tech analysts, CTOs, AI researchers",
+      "viralHook": "Every frontend tech, analyzed and classified by AI."
+    },
+    {
+      "name": "sovereign-elements",
+      "repo": "ItsNotAILABS/sovereign-elements",
+      "description": "Mathematical element intelligences — Gold, Silver, Crimson, and periodic table as AI canisters.",
+      "status": "in-development",
+      "audience": "Blockchain devs, math enthusiasts, AI researchers",
+      "viralHook": "Real elements as real intelligences. The math doesn't lie."
+    },
+    {
+      "name": "nova-wire",
+      "repo": "ItsNotAILABS/nova-wire",
+      "description": "Fibonacci-attested wire protocol for AI. Proof of origin on every response.",
+      "status": "ready-to-extract",
+      "audience": "AI infrastructure engineers, protocol designers",
+      "viralHook": "Mathematical proof that YOUR AI said that."
+    },
+    {
+      "name": "nova-engine-registry",
+      "repo": "ItsNotAILABS/nova-engine-registry",
+      "description": "23 sovereign AI engine definitions. JSON + TypeScript. Build your own SDK on top.",
+      "status": "ready-to-extract",
+      "audience": "AI developers building multi-model systems",
+      "viralHook": "23 engines. Zero vendor lock-in."
+    }
+  ]
+}

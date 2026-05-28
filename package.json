@@ -20,7 +20,8 @@
     }
   },
   "bin": {
-    "nova-os": ".nova/build/organism/organism/sdk/NovaOSRunner.js"
+    "nova-os": ".nova/build/organism/organism/sdk/NovaOSRunner.js",
+    "nova-deploy": "scripts/nova-deploy.mjs"
   },
   "files": [
     ".nova/build/organism",
@@ -36,8 +37,13 @@
     "test": "node tests/run.mjs",
     "itb": "node itb/run.mjs",
     "fix": "./scripts/nova fix",
-    "deploy": "npx wrangler pages deploy public --project-name=nova-protocol",
-    "deploy:preview": "npx wrangler pages deploy public --project-name=nova-protocol --branch=preview",
+    "deploy": "node scripts/nova-deploy.mjs",
+    "deploy:icp": "node scripts/nova-deploy.mjs icp",
+    "deploy:pwa": "node scripts/nova-deploy.mjs pwa",
+    "deploy:cloudflare": "node scripts/nova-deploy.mjs cloudflare",
+    "deploy:sovereign": "node scripts/nova-deploy.mjs sovereign",
+    "deploy:all": "node scripts/nova-deploy.mjs all",
+    "deploy:status": "node scripts/nova-deploy.mjs status",
     "dev:local": "npx wrangler pages dev public --port=3000"
   },
   "keywords": [

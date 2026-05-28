@@ -1,0 +1,39 @@
+{
+  "identity": {
+    "name": "Casa de Medina",
+    "designation": "Architectural Intelligence House",
+    "latinTitle": "Domus Intelligentiae Architecturae",
+    "philosophy": "We do not rent intelligence. We build it from mathematics."
+  },
+  "classification": {
+    "primary": "Sovereign Intelligence Architecture",
+    "secondary": "Mathematical Foundation Technology",
+    "description": "Not academic tech. Not corporate tech. Architectural Intelligence — building from the mathematical elements themselves."
+  },
+  "workspace": {
+    "rootPath": "./workspace",
+    "adminPath": "./workspace/admin",
+    "settingsPath": "./workspace/settings",
+    "researchPath": "./workspace/research",
+    "projectsPath": "./workspace/projects",
+    "logsPath": "./workspace/logs"
+  },
+  "engines": {
+    "count": 23,
+    "tokenTechnologies": 10,
+    "tokenAIModels": 5,
+    "sovereignCanisters": 6,
+    "fractureIntelligences": 100
+  },
+  "monetization": {
+    "strategies": [
+      "SDK licensing — nova-os-sdk as an npm package with enterprise tiers",
+      "Token-as-a-Service — rent YOUR tokenizer to other AI companies",
+      "Engine API — expose the 23 engines as a paid API",
+      "Canister hosting — sovereign compute on your infrastructure",
+      "Research licensing — license the φ-mathematics to universities",
+      "Consulting — architectural intelligence advisory",
+      "White-label — let enterprises run Nova under their brand"
+    ]
+  }
+}

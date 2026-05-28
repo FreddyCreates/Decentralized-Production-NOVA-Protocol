@@ -51,7 +51,14 @@ Usage:
   ./scripts/nova diag                    show diagnostics from the last check/heal run
 
   ${_C_CYN}v10 commands:${_C_RST}
-  ./scripts/nova deploy <name>           record deploy intent for a named canister
+  ./scripts/nova deploy                show deploy targets (ICP, Cloudflare, Sovereign, PWA)
+  ./scripts/nova deploy icp            deploy interface → get https://<id>.ic0.app URL
+  ./scripts/nova deploy cloudflare     deploy interface → get https://nova-protocol.pages.dev
+  ./scripts/nova deploy sovereign      deploy Docker sovereign node → your domain
+  ./scripts/nova deploy pwa            build installable PWA bundle
+  ./scripts/nova deploy all            deploy to ALL targets
+  ./scripts/nova deploy status         show all live URLs
+  ./scripts/nova deploy <canister>     deploy individual canister to ICP mainnet
   ./scripts/nova wire <from> <to> <cap>  record a logical wire between two canisters
   ./scripts/nova genesis <tpl> <owner>   record a genesis event (new organism from template)
   ./scripts/nova run [epoch]             trigger one AGI_MAIN economy epoch (simulation)
@@ -471,22 +478,49 @@ fi
 
 # ── v10 COMMANDS ──────────────────────────────────────────────────────────────
 
-# DEPLOY — record a deploy intent for a named canister
+# DEPLOY — Native Sovereign Deployment Engine
+# Like Fly.io gives you a URL — NOVA Deploy gives you a URL
 run_deploy() {
-  local name="${2:-}"
-  if [[ -z "$name" ]]; then
-    log_err "Usage: ./scripts/nova deploy <canister-name>"
-    exit 1
+  local target="${2:-}"
+
+  # If deploying a specific canister (legacy behavior)
+  if [[ -n "$target" ]] && load_canisters | grep -q "^${target}	"; then
+    log_info "Deploying canister '${target}' to ICP mainnet..."
+    mkdir -p "$ROOT_DIR/.nova"
+    echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] DEPLOY ${target} → ICP mainnet" >> "$ROOT_DIR/.nova/deploy.log"
+    if command -v dfx &>/dev/null; then
+      dfx deploy "${target}" --network ic
+      local cid
+      cid="$(dfx canister --network ic id "${target}" 2>/dev/null || echo "unknown")"
+      log_ok "Deployed: ${_C_CYN}${target}${_C_RST} → https://${cid}.ic0.app"
+    else
+      log_ok "Deploy intent recorded: ${_C_CYN}${target}${_C_RST} → ICP"
+      log_info "Install dfx first: sh -ci \"\$(curl -fsSL https://internetcomputer.org/install.sh)\""
+    fi
+    return
   fi
-  # Validate it's in the manifest
-  if ! load_canisters | grep -q "^${name}	"; then
-    log_err "Canister '${name}' not found in $(basename "$MANIFEST_PATH")"
-    exit 1
+
+  # Native deploy engine — deploy the full interface
+  if [[ -z "$target" ]]; then
+    log_hdr "NOVA DEPLOY — Sovereign Deployment Engine"
+    echo ""
+    echo "  Like Fly.io gives URLs — but it's YOURS."
+    echo ""
+    echo "  Targets:"
+    echo "    ${_C_CYN}icp${_C_RST}         → Internet Computer  → https://<canister>.ic0.app"
+    echo "    ${_C_CYN}cloudflare${_C_RST}  → Cloudflare Pages   → https://nova-protocol.pages.dev"
+    echo "    ${_C_CYN}sovereign${_C_RST}   → Docker full stack  → https://your-domain.com"
+    echo "    ${_C_CYN}pwa${_C_RST}         → PWA bundle         → installable, offline-capable"
+    echo "    ${_C_CYN}all${_C_RST}         → Deploy everywhere"
+    echo "    ${_C_CYN}status${_C_RST}      → Show live URLs"
+    echo ""
+    echo "  Usage: ./scripts/nova deploy <target>"
+    echo ""
+    return
   fi
-  mkdir -p "$ROOT_DIR/.nova"
-  echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] DEPLOY ${name} → ICP mainnet" >> "$ROOT_DIR/.nova/deploy.log"
-  log_ok "Deploy intent recorded: ${_C_CYN}${name}${_C_RST} → ICP"
-  log_info "To deploy live: dfx canister --network ic install ${name}"
+
+  # Dispatch to native deploy engine
+  exec node "$ROOT_DIR/scripts/nova-deploy.mjs" "$target"
 }
 
 # WIRE — record a logical inter-canister connection in NEXORIS
