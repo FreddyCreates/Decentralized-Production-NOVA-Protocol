@@ -6,9 +6,7 @@
  */
 
 /* Tailwind Base Layers */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Global styles */
 *, *::before, *::after {

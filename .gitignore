@@ -13,3 +13,9 @@ target/
 # Prototype — never commit deployment state or network configs
 canister_ids.json
 .dfx/network/ic/
+
+# Local environment overrides (may contain secrets)
+.env.local
+.env.*.local
+src/frontend/.env.local
+src/frontend/.env.*.local
