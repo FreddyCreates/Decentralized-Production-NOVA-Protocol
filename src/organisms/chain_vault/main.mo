@@ -649,6 +649,15 @@ persistent actor ChainVault {
       case (#IOTATangle) "IOTA Tangle";
       case (#Shimmer)    "Shimmer";
       case (#IOTAEvm)    "IOTA EVM";
+      case (#Solana)     "Solana";
+      case (#Cosmos)     "Cosmos";
+      case (#Polkadot)   "Polkadot";
+      case (#Cardano)    "Cardano";
+      case (#Near)       "Near";
+      case (#Sui)        "Sui";
+      case (#Aptos)      "Aptos";
+      case (#TON)        "TON";
+      case (#Algorand)   "Algorand";
       case (#NovaChain)  "NOVA Chain";
       case (#Other(s))   s;
     }
