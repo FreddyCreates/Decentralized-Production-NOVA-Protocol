@@ -1,7 +1,11 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import ErrorBoundary from './ErrorBoundary'
+import MobileNav from './MobileNav'
+import StatusPulse from './StatusPulse'
 
 const navItems = [
   { to: '/', label: 'Home', end: true },
+  { to: '/dashboard', label: 'Dashboard' },
   { to: '/engine', label: 'Engine' },
   { to: '/agents', label: 'Agents' },
   { to: '/renderability', label: 'Renderability' },
@@ -18,7 +22,8 @@ export default function Layout() {
       <nav className="navbar">
         <div className="navbar__inner">
           <span className="navbar__brand">MEDINA / NOVA</span>
-          <div className="navbar__links">
+          <StatusPulse size="sm" showLabel={false} />
+          <div className="navbar__links navbar__links--desktop">
             {navItems.map(({ to, label, end }) => (
               <NavLink
                 key={to}
@@ -32,17 +37,21 @@ export default function Layout() {
               </NavLink>
             ))}
           </div>
+          <MobileNav items={navItems} />
         </div>
       </nav>
 
       <main className="main">
         <div className="container">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
 
       <footer className="footer">
-        Casa de Medina — Architectos de Architectura Inteligente
+        <span>Casa de Medina — Architectos de Architectura Inteligente</span>
+        <span className="footer__version">Node ≥20 · TypeScript · React · φ-Mathematics</span>
       </footer>
     </>
   )

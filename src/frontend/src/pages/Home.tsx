@@ -5,6 +5,7 @@
 import { Link } from 'react-router-dom'
 
 const cards = [
+  { title: 'Organism Dashboard', to: '/dashboard' },
   { title: 'The Architectonic Engine', to: '/engine' },
   { title: 'Activated Agents', to: '/agents' },
   { title: 'Renderability Architecture', to: '/renderability' },

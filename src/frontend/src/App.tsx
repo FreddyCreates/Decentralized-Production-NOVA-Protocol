@@ -5,6 +5,7 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Dashboard from './pages/Dashboard'
 import Engine from './pages/Engine'
 import Agents from './pages/Agents'
 import Renderability from './pages/Renderability'
@@ -12,6 +13,7 @@ import TokenEconomy from './pages/TokenEconomy'
 import ICPCoverage from './pages/ICPCoverage'
 import RealityRelease from './pages/RealityRelease'
 import Executive from './pages/Executive'
+import NotFound from './pages/NotFound'
 import ETHome from './pages/et/ETHome'
 import ETPulse from './pages/et/ETPulse'
 import ETProposals from './pages/et/ETProposals'
@@ -29,6 +31,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="engine" element={<Engine />} />
           <Route path="agents" element={<Agents />} />
           <Route path="renderability" element={<Renderability />} />
@@ -48,6 +51,7 @@ export default function App() {
             <Route path="operator" element={<ETOperator />} />
             <Route path="export/:traceId" element={<ETExport />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -59,6 +59,10 @@
     "type": "git",
     "url": "git+https://github.com/ItsNotAILABS/NATIVE-NOVA-PROTOCOL.git"
   },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "author": "Casa de Medina",
   "license": "SEE LICENSE IN LICENSE.md",
   "devDependencies": {

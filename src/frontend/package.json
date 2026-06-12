@@ -12,6 +12,10 @@
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --reporter=json --outputFile=test-results/results.json"
   },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",
     "@xstate/react": "^6.1.0",
