@@ -1,10 +1,4 @@
 {
-  "deployments": {
-    "pwa": {
-      "bundlePath": "/tmp/workspace/FreddyCreates/Decentralized-Production-NOVA-Protocol/.nova/pwa-deploy",
-      "timestamp": "2026-05-28T16:41:05.588Z",
-      "status": "bundled"
-    }
-  },
+  "deployments": {},
   "lastDeploy": null
 }
