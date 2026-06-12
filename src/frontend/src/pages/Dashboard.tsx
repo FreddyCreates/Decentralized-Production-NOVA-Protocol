@@ -115,7 +115,7 @@ export default function Dashboard() {
             <p>No canisters registered yet.</p>
             <p className="dashboard-empty__hint">
               The organism is dormant. Deploy canisters to activate the substrate.
-              Fibonacci threshold: F({fib(8)}) cycles minimum for metric updates.
+              Fibonacci threshold: F(8)={fib(8)} cycles minimum for metric updates.
             </p>
           </div>
         </section>
